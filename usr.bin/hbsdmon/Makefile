@@ -1,6 +1,8 @@
 PROG=	hbsdmon
-SRCS=	hbsdmon.c
 MAN=
+
+SRCS+=	config.c
+SRCS+=	hbsdmon.c
 
 BINDIR?=	/usr/bin
 
@@ -11,6 +13,6 @@ CFLAGS+=	-I${.CURDIR} \
 LDFLAGS+=	-L${.CURDIR}/../../lib/libpushover \
 		-L/usr/local/lib
 
-LDADD+=		-lcurl -lpushover
+LDADD+=		-lcurl -lpushover -lucl
 
 .include <bsd.prog.mk>

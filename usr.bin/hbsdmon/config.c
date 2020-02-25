@@ -28,46 +28,86 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#include <ucl.h>
 
 #include "hbsdmon.h"
 
-int
-main(int argc, char *argv[])
+hbsdmon_ctx_t *
+new_ctx(void)
 {
-	pushover_message_t *msg;
 	hbsdmon_ctx_t *ctx;
-	int ch;
 
-	ctx = new_ctx();
+	ctx = calloc(1, sizeof(*ctx));
 	if (ctx == NULL)
-		return (1);
+		return (NULL);
 
-	msg = pushover_init_message(NULL);
-	if (msg == NULL)
-		return (1);
-
-	while ((ch = getopt(argc, argv, "c:u:m:p:t:")) != -1) {
-		switch (ch) {
-		case 'c':
-			ctx->hc_config = strdup(optarg);
-			break;
-		case 'u':
-			pushover_message_set_user(msg, optarg);
-			break;
-		case 'm':
-			pushover_message_set_msg(msg, optarg);
-			break;
-		case 'p':
-			break;
-		case 't':
-			pushover_message_set_title(msg, optarg);
-			break;
-		}
+	ctx->hc_psh_ctx = pushover_init_ctx(NULL);
+	if (ctx->hc_psh_ctx == NULL) {
+		free(ctx);
+		return (NULL);
 	}
 
-	if (parse_config(ctx) == false)
-		return (1);
+	return (ctx);
+}
 
-	return (pushover_submit_message(get_psh_ctx(ctx), msg) ? 0 : 1);
+pushover_ctx_t *
+get_psh_ctx(hbsdmon_ctx_t *ctx)
+{
+
+	assert(ctx != NULL);
+	return (ctx->hc_psh_ctx);
+}
+
+bool
+parse_config(hbsdmon_ctx_t *ctx)
+{
+	struct ucl_parser *parser;
+	const ucl_object_t *top, *obj;
+	const char *str;
+	bool res;
+
+	assert(ctx != NULL);
+	assert(ctx->hc_config != NULL);
+
+	res = true;
+	top = NULL;
+
+	parser = ucl_parser_new(UCL_PARSER_KEY_LOWERCASE);
+	if (parser == NULL) {
+		return (false);
+	}
+
+	if (!ucl_parser_add_file(parser, ctx->hc_config)) {
+		res = false;
+		goto end;
+	}
+
+	top = ucl_parser_get_object(parser);
+	if (top == NULL) {
+		res = false;
+		goto end;
+	}
+
+	obj = ucl_lookup_path(top, ".token");
+	if (obj == NULL) {
+		res = false;
+		goto end;
+	}
+
+	str = ucl_object_tostring(obj);
+	if (str == NULL) {
+		res = false;
+		goto end;
+	}
+
+	if (!pushover_set_token(get_psh_ctx(ctx), str)) {
+		res = false;
+		goto end;
+	}
+
+
+end:
+	ucl_parser_free(parser);
+	return (res);
 }
