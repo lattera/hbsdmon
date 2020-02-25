@@ -70,6 +70,18 @@ pushover_set_uri(pushover_ctx_t *ctx, const char *uri)
 }
 
 EXPORTED_SYM
+bool
+pushover_set_token(pushover_ctx_t *ctx, const char *token)
+{
+
+	assert(ctx != NULL);
+	assert(token != NULL);
+
+	ctx->psh_token = strdup(token);
+	return (ctx->psh_token != NULL);
+}
+
+EXPORTED_SYM
 pushover_message_t *
 pushover_init_message(pushover_message_t *msg)
 {
