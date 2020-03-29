@@ -8,6 +8,9 @@
 #define EXPORTED_SYM	 __attribute__((visibility("default")))
 #define PUSHOVER_URI	 "https://api.pushover.net/1/messages.json"
 
+#define	PUSHOVER_FLAGS_NONE	0
+#define	PUSHOVER_FLAGS_ALLOC	1
+
 typedef enum _pushover_priority {
 	PSH_PRIO_NONE = -2,
 	PSH_PRIO_QUIET = -1,
@@ -27,12 +30,14 @@ typedef struct _pushover_message {
 	char			*psh_title;
 	char			*psh_device;
 	pushover_priority_t	 psh_priority;
+	uint64_t		 psh_flags;
 } pushover_message_t;
 
 pushover_ctx_t *pushover_init_ctx(const char *);
 bool pushover_set_uri(pushover_ctx_t *, const char *);
 bool pushover_set_token(pushover_ctx_t *, const char *);
 pushover_message_t *pushover_init_message(pushover_message_t *);
+void pushover_free_message(pushover_message_t **);
 bool pushover_message_set_msg(pushover_message_t *, char *);
 bool pushover_message_set_user(pushover_message_t *, char *);
 bool pushover_message_set_title(pushover_message_t *, char *);
