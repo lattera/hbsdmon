@@ -85,17 +85,43 @@ EXPORTED_SYM
 pushover_message_t *
 pushover_init_message(pushover_message_t *msg)
 {
-	/* XXX determine free-ability */
+	uint64_t flags;
 
-	if (msg == NULL)
+	flags = 0;
+
+	if (msg == NULL) {
 		msg = calloc(1, sizeof(*msg));
-	else
+		flags |= PUSHOVER_FLAGS_ALLOC;
+	} else {
 		memset(msg, 0, sizeof(*msg));
+	}
 
 	if (msg == NULL)
 		return (NULL);
 
 	return (msg);
+}
+
+EXPORTED_SYM
+void
+pushover_free_message(pushover_message_t **msg)
+{
+	pushover_message_t *msgp;
+
+	if (msg == NULL || *msg == NULL)
+		return;
+
+	msgp = *msg;
+
+	free(msgp->psh_user);
+	free(msgp->psh_msg);
+	free(msgp->psh_title);
+	free(msgp->psh_device);
+
+	if (msgp->psh_flags & PUSHOVER_FLAGS_ALLOC) {
+		free(msgp);
+		*msg = NULL;
+	}
 }
 
 EXPORTED_SYM
