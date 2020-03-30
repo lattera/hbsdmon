@@ -219,6 +219,7 @@ pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 	assert(pushover_message_priority_sane(msg->psh_priority));
 
 	res = false;
+	post_str = NULL;
 
 	curl = curl_easy_init();
 	if (curl == NULL)
