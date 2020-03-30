@@ -199,7 +199,12 @@ pushover_message_set_priority(pushover_message_t *msg,
 
 	assert(msg != NULL);
 
-	return (pushover_message_priority_sane(msg->psh_priority));
+	if (!pushover_message_priority_sane(msg->psh_priority))
+		return (false);
+
+	msg->psh_priority = prio;
+
+	return (true);
 }
 
 EXPORTED_SYM
