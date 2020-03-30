@@ -116,6 +116,8 @@ pushover_init_message(pushover_message_t *msg)
 	if (msg == NULL)
 		return (NULL);
 
+	msg->psh_flags = flags;
+
 	return (msg);
 }
 
