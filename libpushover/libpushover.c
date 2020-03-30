@@ -196,8 +196,19 @@ pushover_message_set_priority(pushover_message_t *msg,
 {
 
 	assert(msg != NULL);
-	/* XXX more sanity checking */
-	msg->psh_priority = prio;
+
+	switch (prio) {
+	case PSH_PRIO_NONE:
+	case PSH_PRIO_QUIET:
+	case PSH_PRIO_DEF:
+	case PSH_PRIO_HIGH:
+	case PSH_PRIO_CONFIRM:
+		msg->psh_priority = prio;
+		break;
+	default:
+		return (false);
+	}
+
 	return (true);
 }
 
