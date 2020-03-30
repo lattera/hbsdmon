@@ -37,7 +37,8 @@ main(int argc, char *argv[])
 {
 	pushover_message_t *msg;
 	hbsdmon_ctx_t *ctx;
-	int ch;
+	pushover_ctx_t *pctx;
+	int ch, res;
 
 	ctx = new_ctx();
 	if (ctx == NULL)
@@ -69,5 +70,11 @@ main(int argc, char *argv[])
 	if (parse_config(ctx) == false)
 		return (1);
 
-	return (pushover_submit_message(get_psh_ctx(ctx), msg) ? 0 : 1);
+	pctx = get_psh_ctx(ctx);
+	res = pushover_submit_message(pctx, msg);
+
+	pushover_free_message(&msg);
+	pushover_free_ctx(&(ctx->hc_psh_ctx));
+
+	return (res);
 }
