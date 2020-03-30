@@ -197,19 +197,7 @@ pushover_message_set_priority(pushover_message_t *msg,
 
 	assert(msg != NULL);
 
-	switch (prio) {
-	case PSH_PRIO_NONE:
-	case PSH_PRIO_QUIET:
-	case PSH_PRIO_DEF:
-	case PSH_PRIO_HIGH:
-	case PSH_PRIO_CONFIRM:
-		msg->psh_priority = prio;
-		break;
-	default:
-		return (false);
-	}
-
-	return (true);
+	return (pushover_message_priority_sane(msg->psh_priority));
 }
 
 EXPORTED_SYM
@@ -226,6 +214,7 @@ pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 	assert(ctx->psh_token != NULL);
 	assert(msg->psh_user != NULL);
 	assert(msg->psh_msg != NULL);
+	assert(pushover_message_priority_sane(msg->psh_priority));
 
 	res = false;
 
@@ -236,10 +225,8 @@ pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 	curl_easy_setopt(curl, CURLOPT_URL, ctx->psh_uri);
 
 	post_str = msg_to_str(ctx, msg, curl);
-	if (post_str == NULL) {
-		res = false;
+	if (post_str == NULL)
 		goto end;
-	}
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_str);
 
 	curl_code = curl_easy_perform(curl);

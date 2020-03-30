@@ -1,6 +1,6 @@
 SHLIB=	pushover
 SHLIB_MAJOR=	0
-SRCS=	libpushover.c
+SRCS=	libpushover.c sanity.c
 INCS=	libpushover.h
 
 CFLAGS+=	-I${.CURDIR} -I/usr/local/include

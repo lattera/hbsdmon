@@ -47,4 +47,6 @@ bool pushover_message_set_priority(pushover_message_t *,
     pushover_priority_t);
 bool pushover_submit_message(pushover_ctx_t *, pushover_message_t *);
 
+bool pushover_message_priority_sane(pushover_priority_t);
+
 #endif /* !_LIBPUSHOVER_H */
