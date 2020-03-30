@@ -34,6 +34,7 @@ typedef struct _pushover_message {
 } pushover_message_t;
 
 pushover_ctx_t *pushover_init_ctx(const char *);
+void pushover_free_ctx(pushover_ctx_t **);
 bool pushover_set_uri(pushover_ctx_t *, const char *);
 bool pushover_set_token(pushover_ctx_t *, const char *);
 pushover_message_t *pushover_init_message(pushover_message_t *);

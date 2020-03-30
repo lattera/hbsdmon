@@ -58,6 +58,23 @@ out:
 }
 
 EXPORTED_SYM
+void
+pushover_free_ctx(pushover_ctx_t **ctx)
+{
+	pushover_ctx_t *ctxp;
+
+	if (ctx == NULL || *ctx == NULL)
+		return;
+
+	ctxp = *ctx;
+
+	free(ctxp->psh_uri);
+	free(ctxp->psh_token);
+	free(ctxp);
+	*ctx = NULL;
+}
+
+EXPORTED_SYM
 bool
 pushover_set_uri(pushover_ctx_t *ctx, const char *uri)
 {
