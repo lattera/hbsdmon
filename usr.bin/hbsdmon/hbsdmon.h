@@ -5,6 +5,13 @@
 
 #include "libpushover.h"
 
+typedef enum _hbsdmon_method {
+	METHOD_HTTP,
+	METHOD_HTTPS,
+	METHOD_ICMP,
+	METHOD_TCP,
+} hbsdmon_method_t;
+
 typedef struct _hbsdmon_keyvalue {
 	char				*hk_key;
 	union {
@@ -19,7 +26,7 @@ typedef struct _hbsdmon_keyvalue {
 
 typedef struct _hbsdmon_node {
 	char				*hn_host;
-	char				*hn_method;
+	hbsdmon_method_t		 hn_method;
 	SLIST_HEAD(, _hbsdmon_keyvalue)	 hn_kvstore;
 	SLIST_ENTRY(_hbsdmon_node)	 hn_entry;
 } hbsdmon_node_t;

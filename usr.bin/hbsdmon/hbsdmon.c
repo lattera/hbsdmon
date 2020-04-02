@@ -67,11 +67,17 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (parse_config(ctx) == false)
+	if (parse_config(ctx) == false) {
+		fprintf(stderr, "[-] Configuration parsing failed. Bailing.\n");
 		return (1);
+	}
 
 	pctx = get_psh_ctx(ctx);
+#if 0
 	res = pushover_submit_message(pctx, msg);
+#else
+	res = 0;
+#endif
 
 	pushover_free_message(&msg);
 	pushover_free_ctx(&(ctx->hc_psh_ctx));

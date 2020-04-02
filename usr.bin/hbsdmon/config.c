@@ -33,6 +33,8 @@
 
 #include "hbsdmon.h"
 
+static bool parse_nodes(hbsdmon_ctx_t *, const ucl_object_t *);
+
 hbsdmon_ctx_t *
 new_ctx(void)
 {
@@ -126,6 +128,8 @@ parse_config(hbsdmon_ctx_t *ctx)
 		goto end;
 	}
 
+	res = parse_nodes(ctx, top);
+
 end:
 	if (res == false) {
 		free(ctx->hc_dest);
@@ -133,4 +137,83 @@ end:
 	}
 	ucl_parser_free(parser);
 	return (res);
+}
+
+static hbsdmon_method_t
+parse_method(const char *method)
+{
+	if (!strcasecmp(method, "ICMP"))
+		return METHOD_ICMP;
+	if (!strcasecmp(method, "HTTPS"))
+		return METHOD_HTTPS;
+	if (!strcasecmp(method, "HTTP"))
+		return METHOD_HTTP;
+
+	/* Default to ICMP */
+	return METHOD_ICMP;
+}
+
+static bool
+parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
+{
+	const ucl_object_t *ucl_nodes, *ucl_node, *ucl_tmp;
+	ucl_object_iter_t ucl_it, ucl_it_obj;
+	hbsdmon_keyvalue_t *kv;
+	hbsdmon_node_t *node;
+	const char *str;
+
+	ucl_nodes = ucl_lookup_path(top, ".nodes");
+	if (ucl_nodes == NULL) {
+		fprintf(stderr, "[-] No nodes defined.\n");
+		return (false);
+	}
+
+	ucl_it = ucl_it_obj = NULL;
+
+	while ((ucl_node = ucl_iterate_object(ucl_nodes, &ucl_it, true))) {
+		node = calloc(1, sizeof(*node));
+		if (node == NULL) {
+			perror("calloc");
+			return (false);
+		}
+
+		SLIST_INIT(&(node->hn_kvstore));
+
+		ucl_tmp = ucl_lookup_path(ucl_node, ".host");
+		if (ucl_tmp == NULL) {
+			fprintf(stderr, "[-] Host not defined for node.\n");
+			return (false);
+		}
+
+		str = ucl_object_tostring(ucl_tmp);
+		if (str == NULL) {
+			fprintf(stderr, "[-] Host is not a string.\n");
+			return (false);
+		}
+
+		node->hn_host = strdup(str);
+		if (node->hn_host == NULL) {
+			perror("strdup");
+			return (false);
+		}
+
+		ucl_tmp = ucl_lookup_path(ucl_node, ".method");
+		if (ucl_tmp == NULL) {
+			fprintf(stderr, "[-] Method not defined for host %s\n",
+			    node->hn_host);
+			return (false);
+		}
+
+		str = ucl_object_tostring(ucl_tmp);
+		if (str == NULL) {
+			fprintf(stderr, "[-] Method is not a string.\n");
+			return (false);
+		}
+
+		node->hn_method = parse_method(str);
+
+		SLIST_INSERT_HEAD(&(ctx->hc_nodes), node, hn_entry);
+	}
+
+	return (true);
 }

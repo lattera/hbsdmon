@@ -1,0 +1,15 @@
+{
+	token: "pushover_api_token",
+	dest: "pushover_destination",
+	nodes: [
+		{
+			host: "ad-01.md.hardenedbsd.org",
+			method: "ICMP"
+		},
+		{
+			host: "git-01.md.hardenedbsd.org",
+			method: "HTTPS",
+			port: 443,
+		}
+	]
+}
