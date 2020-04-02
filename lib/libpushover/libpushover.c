@@ -211,9 +211,9 @@ EXPORTED_SYM
 bool
 pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 {
-	CURL *curl;
 	CURLcode curl_code;
 	char *post_str;
+	CURL *curl;
 	bool res;
 
 	assert(ctx != NULL);

@@ -48,6 +48,8 @@ new_ctx(void)
 		return (NULL);
 	}
 
+	SLIST_INIT(&(ctx->hc_nodes));
+
 	return (ctx);
 }
 
@@ -106,8 +108,29 @@ parse_config(hbsdmon_ctx_t *ctx)
 		goto end;
 	}
 
+	obj = ucl_lookup_path(top, ".dest");
+	if (obj == NULL) {
+		res = false;
+		goto end;
+	}
+
+	str = ucl_object_tostring(obj);
+	if (str == NULL) {
+		res = false;
+		goto end;
+	}
+
+	ctx->hc_dest = strdup(str);
+	if (ctx->hc_dest == NULL) {
+		res = false;
+		goto end;
+	}
 
 end:
+	if (res == false) {
+		free(ctx->hc_dest);
+		ctx->hc_dest = NULL;
+	}
 	ucl_parser_free(parser);
 	return (res);
 }
