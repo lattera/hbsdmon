@@ -139,20 +139,6 @@ end:
 	return (res);
 }
 
-static hbsdmon_method_t
-parse_method(const char *method)
-{
-	if (!strcasecmp(method, "ICMP"))
-		return METHOD_ICMP;
-	if (!strcasecmp(method, "HTTPS"))
-		return METHOD_HTTPS;
-	if (!strcasecmp(method, "HTTP"))
-		return METHOD_HTTP;
-
-	/* Default to ICMP */
-	return METHOD_ICMP;
-}
-
 static bool
 parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 {
@@ -160,7 +146,9 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 	ucl_object_iter_t ucl_it, ucl_it_obj;
 	hbsdmon_keyvalue_t *kv;
 	hbsdmon_node_t *node;
+	uint64_t kv_uint;
 	const char *str;
+	int64_t ucl_int;
 
 	ucl_nodes = ucl_lookup_path(top, ".nodes");
 	if (ucl_nodes == NULL) {
@@ -210,7 +198,40 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 			return (false);
 		}
 
-		node->hn_method = parse_method(str);
+		node->hn_method = hbsdmon_str_to_method(str);
+		switch (node->hn_method) {
+		case METHOD_HTTP:
+		case METHOD_HTTPS:
+		case METHOD_TCP:
+			ucl_tmp = ucl_lookup_path(ucl_node, ".port");
+			if (ucl_tmp == NULL) {
+				fprintf(stderr, "[-] Port not defined.\n");
+				return (false);
+			}
+			if (!ucl_object_toint_safe(ucl_tmp, &ucl_int)) {
+				fprintf(stderr, "[-] Port is not an integer.\n");
+				return (false);
+			}
+
+			kv_uint = ucl_int;
+			kv = hbsdmon_new_keyvalue();
+			if (kv == NULL) {
+				fprintf(stderr, "[-] Could not create new keyvalue object.\n");
+				return (false);
+			}
+
+			if (!hbsdmon_keyvalue_store(kv, "port", &kv_uint,
+			    sizeof(kv_uint))) {
+				fprintf(stderr, "[-] Could not store port.\n");
+				return (false);
+			}
+
+			SLIST_INSERT_HEAD(&(node->hn_kvstore), kv, hk_entry);
+
+			break;
+		default:
+			break;
+		}
 
 		SLIST_INSERT_HEAD(&(ctx->hc_nodes), node, hn_entry);
 	}

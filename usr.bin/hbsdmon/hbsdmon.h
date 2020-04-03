@@ -14,12 +14,7 @@ typedef enum _hbsdmon_method {
 
 typedef struct _hbsdmon_keyvalue {
 	char				*hk_key;
-	union {
-		char			*hk_charp;
-		void			*hk_voidp;
-		uint64_t		 hk_uint;
-	};
-	char				*hk_value;
+	void				*hk_value;
 	size_t				 hk_value_len;
 	SLIST_ENTRY(_hbsdmon_keyvalue)	 hk_entry;
 } hbsdmon_keyvalue_t;
@@ -41,5 +36,12 @@ typedef struct _hbsdmon_ctx {
 hbsdmon_ctx_t *new_ctx(void);
 pushover_ctx_t *get_psh_ctx(hbsdmon_ctx_t *);
 bool parse_config(hbsdmon_ctx_t *);
+hbsdmon_method_t hbsdmon_str_to_method(const char *);
+const char *hbsdmon_method_to_str(hbsdmon_method_t);
+
+hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
+bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
+    void *, size_t);
+uint64_t hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *);
 
 #endif /* !_HBSDMON_H */
