@@ -45,6 +45,7 @@ hbsdmon_new_kv_store(void)
 	}
 
 	err = pthread_mutex_init(&(res->hks_mtx), NULL);
+	SLIST_INIT(&(res->hks_store));
 
 	return (res);
 }
@@ -56,6 +57,20 @@ hbsdmon_new_keyvalue(void) {
 	res = calloc(1, sizeof(*res));
 
 	return (res);
+}
+
+int
+hbsdmon_lock_kvstore(hbsdmon_keyvalue_store_t *store)
+{
+
+	return (pthread_mutex_lock(&(store->hks_mtx)));
+}
+
+int
+hbsdmon_unlock_kvstore(hbsdmon_keyvalue_store_t *store)
+{
+
+	return (pthread_mutex_unlock(&(store->hks_mtx)));
 }
 
 bool
@@ -107,7 +122,9 @@ hbsdmon_append_kv(hbsdmon_keyvalue_store_t *store,
     hbsdmon_keyvalue_t *kv)
 {
 
+	hbsdmon_lock_kvstore(store);
 	SLIST_INSERT_HEAD(&(store->hks_store), kv, hk_entry);
+	hbsdmon_unlock_kvstore(store);
 }
 
 hbsdmon_keyvalue_t *
@@ -117,13 +134,16 @@ hbsdmon_find_kv(hbsdmon_keyvalue_store_t *store, const char *key,
 	hbsdmon_keyvalue_t *kv, *tkv;
 	bool res;
 
+	hbsdmon_lock_kvstore(store);
 	SLIST_FOREACH_SAFE(kv, &(store->hks_store), hk_entry, tkv) {
 		res = icase ? strcasecmp(kv->hk_key, key) :
 		    strcmp(kv->hk_key, key);
 		if (!res) {
+			hbsdmon_unlock_kvstore(store);
 			return (kv);
 		}
 	}
 
+	hbsdmon_unlock_kvstore(store);
 	return (NULL);
 }

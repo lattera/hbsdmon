@@ -61,5 +61,7 @@ hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,
     const char *, bool);
 
 hbsdmon_keyvalue_store_t *hbsdmon_new_kv_store(void);
+int hbsdmon_lock_kvstore(hbsdmon_keyvalue_store_t *);
+int hbsdmon_unlock_kvstore(hbsdmon_keyvalue_store_t *);
 
 #endif /* !_HBSDMON_H */
