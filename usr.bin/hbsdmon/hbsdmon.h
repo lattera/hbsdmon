@@ -36,6 +36,7 @@ typedef struct _hbsdmon_ctx {
 	char				*hc_config;
 	char				*hc_dest;
 	pushover_ctx_t			*hc_psh_ctx;
+	hbsdmon_keyvalue_store_t	*hc_kvstore;
 	SLIST_HEAD(, _hbsdmon_node)	 hc_nodes;
 } hbsdmon_ctx_t;
 

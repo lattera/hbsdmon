@@ -50,6 +50,13 @@ new_ctx(void)
 		return (NULL);
 	}
 
+	ctx->hc_kvstore = hbsdmon_new_kv_store();
+	if (ctx->hc_kvstore == NULL) {
+		pushover_free_ctx(&(ctx->hc_psh_ctx));
+		free(ctx);
+		return (NULL);
+	}
+
 	SLIST_INIT(&(ctx->hc_nodes));
 
 	return (ctx);
