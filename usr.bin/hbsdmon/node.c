@@ -64,6 +64,14 @@ hbsdmon_node_append_kv(hbsdmon_node_t *node, hbsdmon_keyvalue_t *kv)
 	hbsdmon_append_kv(store, kv);
 }
 
+hbsdmon_keyvalue_t *
+hbsdmon_find_kv_in_node(hbsdmon_node_t *node, const char *key,
+    bool icase)
+{
+
+	return (hbsdmon_find_kv(hbsdmon_node_kv(node), key, icase));
+}
+
 void
 hbsdmon_node_debug_print(hbsdmon_node_t *node)
 {
@@ -78,18 +86,4 @@ hbsdmon_node_debug_print(hbsdmon_node_t *node)
 		printf("    Key: %s\n", kv->hk_key);
 		printf("    &Value: %p\n", kv->hk_value);
 	}
-}
-
-hbsdmon_keyvalue_t *
-hbsdmon_find_kv_in_node(hbsdmon_node_t *node, const char *key)
-{
-	hbsdmon_keyvalue_t *kv, *tkv;
-
-	SLIST_FOREACH_SAFE(kv, &(node->hn_kvstore.hks_store),
-	    hk_entry, tkv) {
-		if (!strcmp(kv->hk_key, key))
-			return (kv);
-	}
-
-	return (NULL);
 }

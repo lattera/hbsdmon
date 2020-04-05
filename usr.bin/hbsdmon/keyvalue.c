@@ -93,3 +93,21 @@ hbsdmon_append_kv(hbsdmon_keyvalue_store_t *store,
 
 	SLIST_INSERT_HEAD(&(store->hks_store), kv, hk_entry);
 }
+
+hbsdmon_keyvalue_t *
+hbsdmon_find_kv(hbsdmon_keyvalue_store_t *store, const char *key,
+    bool icase)
+{
+	hbsdmon_keyvalue_t *kv, *tkv;
+	bool res;
+
+	SLIST_FOREACH_SAFE(kv, &(store->hks_store), hk_entry, tkv) {
+		res = icase ? strcasecmp(kv->hk_key, key) :
+		    strcmp(kv->hk_key, key);
+		if (!res) {
+			return (kv);
+		}
+	}
+
+	return (NULL);
+}

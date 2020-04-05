@@ -47,7 +47,7 @@ hbsdmon_node_t *hbsdmon_new_node(void);
 void hbsdmon_node_append_kv(hbsdmon_node_t *, hbsdmon_keyvalue_t *);
 void hbsdmon_node_debug_print(hbsdmon_node_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
-    const char *);
+    const char *, bool);
 
 hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
 bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
@@ -55,5 +55,7 @@ bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
 uint64_t hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *);
 void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *);
+hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,
+    const char *, bool);
 
 #endif /* !_HBSDMON_H */
