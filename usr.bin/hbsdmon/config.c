@@ -159,13 +159,11 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 	ucl_it = ucl_it_obj = NULL;
 
 	while ((ucl_node = ucl_iterate_object(ucl_nodes, &ucl_it, true))) {
-		node = calloc(1, sizeof(*node));
+		node = hbsdmon_new_node();
 		if (node == NULL) {
 			perror("calloc");
 			return (false);
 		}
-
-		SLIST_INIT(&(node->hn_kvstore));
 
 		ucl_tmp = ucl_lookup_path(ucl_node, ".host");
 		if (ucl_tmp == NULL) {
@@ -226,14 +224,14 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 				return (false);
 			}
 
-			SLIST_INSERT_HEAD(&(node->hn_kvstore), kv, hk_entry);
-
+			hbsdmon_node_append_kv(node, kv);
 			break;
 		default:
 			break;
 		}
 
 		SLIST_INSERT_HEAD(&(ctx->hc_nodes), node, hn_entry);
+		hbsdmon_node_debug_print(node);
 	}
 
 	return (true);

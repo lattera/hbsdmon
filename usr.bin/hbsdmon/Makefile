@@ -4,6 +4,7 @@ MAN=
 SRCS+=	config.c
 SRCS+=	hbsdmon.c
 SRCS+=	keyvalue.c
+SRCS+=	node.c
 SRCS+=	util.c
 
 BINDIR?=	/usr/bin

@@ -33,63 +33,63 @@
 
 #include "hbsdmon.h"
 
-hbsdmon_keyvalue_t *
-hbsdmon_new_keyvalue(void) {
-	hbsdmon_keyvalue_t *res;
+hbsdmon_node_t *
+hbsdmon_new_node(void)
+{
+	hbsdmon_node_t *res;
 
 	res = calloc(1, sizeof(*res));
+	if (res == NULL) {
+		return (NULL);
+	}
+
+	SLIST_INIT(&(res->hn_kvstore.hks_store));
 
 	return (res);
 }
 
-bool
-hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *kv, const char *key,
-    void *value, size_t len)
+hbsdmon_keyvalue_store_t *
+hbsdmon_node_kv(hbsdmon_node_t *node)
 {
 
-	assert(kv != NULL);
-	assert(key != NULL);
-
-	kv->hk_key = strdup(key);
-	if (kv->hk_key == NULL) {
-		return (false);
-	}
-
-	if (len > 0) {
-		kv->hk_value = malloc(len);
-		if (kv->hk_value == NULL) {
-			free(kv->hk_key);
-			kv->hk_key = NULL;
-			return (false);
-		}
-
-		memmove(kv->hk_value, value, len);
-		kv->hk_value_len = len;
-	} else {
-		kv->hk_value = NULL;
-		kv->hk_value_len = 0;
-	}
-
-	return (true);
-}
-
-uint64_t
-hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *kv)
-{
-	uint64_t res;
-
-	assert(kv != NULL);
-	assert(kv->hk_value_len == sizeof(uint64_t));
-
-	res = *((uint64_t *)(kv->hk_value));
-
-	return (res);
+	return (&(node->hn_kvstore));
 }
 
 void
-hbsdmon_append_kv(hbsdmon_keyvalue_store_t *store,
-    hbsdmon_keyvalue_t *kv)
+hbsdmon_node_append_kv(hbsdmon_node_t *node, hbsdmon_keyvalue_t *kv)
 {
+	hbsdmon_keyvalue_store_t *store;
 
-	SLIST_INSERT_HEAD(&(store->hks_store), kv, hk_entry);
+	store = hbsdmon_node_kv(node);
+	hbsdmon_append_kv(store, kv);
+}
+
+void
+hbsdmon_node_debug_print(hbsdmon_node_t *node)
+{
+	hbsdmon_keyvalue_store_t *store;
+	hbsdmon_keyvalue_t *kv, *tkv;
+
+	store = hbsdmon_node_kv(node);
+
+	printf("Node: %s\n", node->hn_host);
+
+	SLIST_FOREACH_SAFE(kv, &(store->hks_store), hk_entry, tkv) {
+		printf("    Key: %s\n", kv->hk_key);
+		printf("    &Value: %p\n", kv->hk_value);
+	}
+}
+
+hbsdmon_keyvalue_t *
+hbsdmon_find_kv_in_node(hbsdmon_node_t *node, const char *key)
+{
+	hbsdmon_keyvalue_t *kv, *tkv;
+
+	SLIST_FOREACH_SAFE(kv, &(node->hn_kvstore.hks_store),
+	    hk_entry, tkv) {
+		if (!strcmp(kv->hk_key, key))
+			return (kv);
+	}
+
+	return (NULL);
 }

@@ -19,10 +19,14 @@ typedef struct _hbsdmon_keyvalue {
 	SLIST_ENTRY(_hbsdmon_keyvalue)	 hk_entry;
 } hbsdmon_keyvalue_t;
 
+typedef struct _hbsdmon_keyvalue_store {
+	SLIST_HEAD(, _hbsdmon_keyvalue)	hks_store;
+} hbsdmon_keyvalue_store_t;
+
 typedef struct _hbsdmon_node {
 	char				*hn_host;
 	hbsdmon_method_t		 hn_method;
-	SLIST_HEAD(, _hbsdmon_keyvalue)	 hn_kvstore;
+	hbsdmon_keyvalue_store_t	 hn_kvstore;
 	SLIST_ENTRY(_hbsdmon_node)	 hn_entry;
 } hbsdmon_node_t;
 
@@ -39,9 +43,17 @@ bool parse_config(hbsdmon_ctx_t *);
 hbsdmon_method_t hbsdmon_str_to_method(const char *);
 const char *hbsdmon_method_to_str(hbsdmon_method_t);
 
+hbsdmon_node_t *hbsdmon_new_node(void);
+void hbsdmon_node_append_kv(hbsdmon_node_t *, hbsdmon_keyvalue_t *);
+void hbsdmon_node_debug_print(hbsdmon_node_t *);
+hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
+    const char *);
+
 hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
 bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
     void *, size_t);
 uint64_t hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *);
+void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
+    hbsdmon_keyvalue_t *);
 
 #endif /* !_HBSDMON_H */
