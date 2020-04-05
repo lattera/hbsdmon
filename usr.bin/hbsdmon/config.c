@@ -156,6 +156,7 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 	uint64_t kv_uint;
 	const char *str;
 	int64_t ucl_int;
+	int port;
 
 	ucl_nodes = ucl_lookup_path(top, ".nodes");
 	if (ucl_nodes == NULL) {
@@ -218,15 +219,15 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 				return (false);
 			}
 
-			kv_uint = ucl_int;
+			port = ucl_int;
 			kv = hbsdmon_new_keyvalue();
 			if (kv == NULL) {
 				fprintf(stderr, "[-] Could not create new keyvalue object.\n");
 				return (false);
 			}
 
-			if (!hbsdmon_keyvalue_store(kv, "port", &kv_uint,
-			    sizeof(kv_uint))) {
+			if (!hbsdmon_keyvalue_store(kv, "port", &port,
+			    sizeof(port))) {
 				fprintf(stderr, "[-] Could not store port.\n");
 				return (false);
 			}

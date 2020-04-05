@@ -4,6 +4,7 @@ MAN=
 SRCS+=	config.c
 SRCS+=	hbsdmon.c
 SRCS+=	keyvalue.c
+SRCS+=	net_tcp.c
 SRCS+=	node.c
 SRCS+=	util.c
 

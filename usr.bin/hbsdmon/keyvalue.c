@@ -155,6 +155,19 @@ hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *kv)
 	return (res);
 }
 
+int
+hbsdmon_keyvalue_to_int(hbsdmon_keyvalue_t *kv)
+{
+	int res;
+
+	assert(kv != NULL);
+	assert(kv->hk_value_len == sizeof(int));
+
+	res = *((int *)(kv->hk_value));
+
+	return (res);
+}
+
 void
 hbsdmon_append_kv(hbsdmon_keyvalue_store_t *store,
     hbsdmon_keyvalue_t *kv)

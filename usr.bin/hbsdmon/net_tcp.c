@@ -28,47 +28,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#include <ucl.h>
 
 #include "hbsdmon.h"
 
-int
-main(int argc, char *argv[])
+bool
+hbsdmon_tcp_ping(hbsdmon_node_t *node)
 {
-	hbsdmon_node_t *node, *tnode;
-	hbsdmon_ctx_t *ctx;
-	int ch, res;
+	hbsdmon_keyvalue_t *kv;
+	int64_t porti64;
+	int port;
 
-	ctx = new_ctx();
-	if (ctx == NULL)
-		return (1);
-
-	while ((ch = getopt(argc, argv, "c:")) != -1) {
-		switch (ch) {
-		case 'c':
-			ctx->hc_config = strdup(optarg);
-			break;
-		}
+	kv = hbsdmon_find_kv_in_node(node, "port", false);
+	if (kv == NULL) {
+		return (false);
 	}
 
-	if (parse_config(ctx) == false) {
-		fprintf(stderr, "[-] Configuration parsing failed. Bailing.\n");
-		return (1);
-	}
+	port = hbsdmon_keyvalue_to_int(kv);
 
-	SLIST_FOREACH_SAFE(node, &(ctx->hc_nodes), hn_entry, tnode) {
-		switch (node->hn_method) {
-		case METHOD_TCP:
-			hbsdmon_tcp_ping(node);
-			break;
-		default:
-			break;
-		}
-	}
+	printf("Connecting to %s:%d\n", node->hn_host, port);
 
-	res = 0;
-
-	pushover_free_ctx(&(ctx->hc_psh_ctx));
-
-	return (res);
+	return (true);
 }

@@ -38,12 +38,32 @@ hbsdmon_method_t
 hbsdmon_str_to_method(const char *method)
 {
 	if (!strcasecmp(method, "ICMP"))
-		return METHOD_ICMP;
+		return (METHOD_ICMP);
 	if (!strcasecmp(method, "HTTPS"))
-		return METHOD_HTTPS;
+		return (METHOD_HTTPS);
 	if (!strcasecmp(method, "HTTP"))
-		return METHOD_HTTP;
+		return (METHOD_HTTP);
+	if (!strcasecmp(method, "TCP"))
+		return (METHOD_TCP);
 
 	/* Default to ICMP */
 	return METHOD_ICMP;
+}
+
+const char *
+hbsdmon_method_to_str(hbsdmon_method_t method)
+{
+
+	switch (method) {
+	case METHOD_HTTPS:
+		return ("HTTPS");
+	case METHOD_HTTP:
+		return ("HTTP");
+	case METHOD_ICMP:
+		return ("ICMP");
+	case METHOD_TCP:
+		return ("TCP");
+	default:
+		return (NULL);
+	}
 }

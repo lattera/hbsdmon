@@ -47,6 +47,7 @@ hbsdmon_method_t hbsdmon_str_to_method(const char *);
 const char *hbsdmon_method_to_str(hbsdmon_method_t);
 
 hbsdmon_node_t *hbsdmon_new_node(void);
+hbsdmon_keyvalue_store_t *hbsdmon_node_kv(hbsdmon_node_t *);
 void hbsdmon_node_append_kv(hbsdmon_node_t *, hbsdmon_keyvalue_t *);
 void hbsdmon_node_debug_print(hbsdmon_node_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
@@ -58,6 +59,7 @@ bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
 bool hbsdmon_keyvalue_modify(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *, void *, size_t, bool);
 uint64_t hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *);
+int hbsdmon_keyvalue_to_int(hbsdmon_keyvalue_t *);
 void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,
@@ -66,5 +68,7 @@ hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,
 hbsdmon_keyvalue_store_t *hbsdmon_new_kv_store(void);
 int hbsdmon_lock_kvstore(hbsdmon_keyvalue_store_t *);
 int hbsdmon_unlock_kvstore(hbsdmon_keyvalue_store_t *);
+
+bool hbsdmon_tcp_ping(hbsdmon_node_t *);
 
 #endif /* !_HBSDMON_H */
