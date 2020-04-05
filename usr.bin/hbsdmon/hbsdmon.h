@@ -1,6 +1,7 @@
 #ifndef _HBSDMON_H
 #define _HBSDMON_H
 
+#include <pthread.h>
 #include <sys/queue.h>
 
 #include "libpushover.h"
@@ -20,13 +21,14 @@ typedef struct _hbsdmon_keyvalue {
 } hbsdmon_keyvalue_t;
 
 typedef struct _hbsdmon_keyvalue_store {
-	SLIST_HEAD(, _hbsdmon_keyvalue)	hks_store;
+	pthread_mutex_t			 hks_mtx;
+	SLIST_HEAD(, _hbsdmon_keyvalue)	 hks_store;
 } hbsdmon_keyvalue_store_t;
 
 typedef struct _hbsdmon_node {
 	char				*hn_host;
 	hbsdmon_method_t		 hn_method;
-	hbsdmon_keyvalue_store_t	 hn_kvstore;
+	hbsdmon_keyvalue_store_t	*hn_kvstore;
 	SLIST_ENTRY(_hbsdmon_node)	 hn_entry;
 } hbsdmon_node_t;
 
@@ -57,5 +59,7 @@ void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,
     const char *, bool);
+
+hbsdmon_keyvalue_store_t *hbsdmon_new_kv_store(void);
 
 #endif /* !_HBSDMON_H */

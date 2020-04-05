@@ -43,7 +43,13 @@ hbsdmon_new_node(void)
 		return (NULL);
 	}
 
-	SLIST_INIT(&(res->hn_kvstore.hks_store));
+	res->hn_kvstore = calloc(1, sizeof(*(res->hn_kvstore)));
+	if (res->hn_kvstore == NULL) {
+		free(res);
+		return (NULL);
+	}
+
+	SLIST_INIT(&(res->hn_kvstore->hks_store));
 
 	return (res);
 }
@@ -52,7 +58,7 @@ hbsdmon_keyvalue_store_t *
 hbsdmon_node_kv(hbsdmon_node_t *node)
 {
 
-	return (&(node->hn_kvstore));
+	return (node->hn_kvstore);
 }
 
 void

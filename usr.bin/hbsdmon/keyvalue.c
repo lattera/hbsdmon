@@ -33,6 +33,22 @@
 
 #include "hbsdmon.h"
 
+hbsdmon_keyvalue_store_t *
+hbsdmon_new_kv_store(void)
+{
+	hbsdmon_keyvalue_store_t *res;
+	int err;
+
+	res = calloc(1, sizeof(*res));
+	if (res == NULL) {
+		return (NULL);
+	}
+
+	err = pthread_mutex_init(&(res->hks_mtx), NULL);
+
+	return (res);
+}
+
 hbsdmon_keyvalue_t *
 hbsdmon_new_keyvalue(void) {
 	hbsdmon_keyvalue_t *res;
