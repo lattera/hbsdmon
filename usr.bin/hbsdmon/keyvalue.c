@@ -44,8 +44,12 @@ hbsdmon_new_kv_store(void)
 		return (NULL);
 	}
 
-	err = pthread_mutex_init(&(res->hks_mtx), NULL);
 	SLIST_INIT(&(res->hks_store));
+	err = pthread_mutex_init(&(res->hks_mtx), NULL);
+	if (err) {
+		free(res);
+		return (NULL);
+	}
 
 	return (res);
 }
@@ -102,6 +106,40 @@ hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *kv, const char *key,
 	}
 
 	return (true);
+}
+
+bool
+hbsdmon_keyvalue_modify(hbsdmon_keyvalue_store_t *store,
+    hbsdmon_keyvalue_t *kv, void *value, size_t len, bool lock)
+{
+	void *p;
+	bool res;
+
+	res = true;
+
+	if (lock) {
+		hbsdmon_lock_kvstore(store);
+	}
+
+	if (len == kv->hk_value_len) {
+		memmove(kv->hk_value, value, len);
+	} else {
+		p = realloc(kv->hk_value, len);
+		if (p == NULL) {
+			res = false;
+			goto end;
+		}
+
+		memmove(p, value, len);
+		kv->hk_value = p;
+	}
+
+end:
+	if (lock) {
+		hbsdmon_unlock_kvstore(store);
+	}
+
+	return (res);
 }
 
 uint64_t

@@ -55,6 +55,8 @@ hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
 hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
 bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
     void *, size_t);
+bool hbsdmon_keyvalue_modify(hbsdmon_keyvalue_store_t *,
+    hbsdmon_keyvalue_t *, void *, size_t, bool);
 uint64_t hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *);
 void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *);
