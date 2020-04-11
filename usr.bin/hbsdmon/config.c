@@ -57,6 +57,14 @@ new_ctx(void)
 		return (NULL);
 	}
 
+	ctx->hc_zmq = zmq_ctx_new();
+	if (ctx->hc_zmq == NULL) {
+		hbsdmon_free_kvstore(&ctx->hc_kvstore);
+		pushover_free_ctx(&(ctx->hc_psh_ctx));
+		free(ctx);
+		return (NULL);
+	}
+
 	SLIST_INIT(&(ctx->hc_nodes));
 
 	return (ctx);

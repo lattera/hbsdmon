@@ -17,6 +17,6 @@ CFLAGS+=	-I${.CURDIR} \
 LDFLAGS+=	-L${.CURDIR}/../../lib/libpushover \
 		-L/usr/local/lib
 
-LDADD+=		-lcurl -lpushover -lucl
+LDADD+=		-lcurl -lpushover -lucl -lzmq
 
 .include <bsd.prog.mk>

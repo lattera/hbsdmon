@@ -4,6 +4,8 @@
 #include <pthread.h>
 #include <sys/queue.h>
 
+#include <zmq.h>
+
 #include "libpushover.h"
 
 typedef enum _hbsdmon_method {
@@ -37,6 +39,7 @@ typedef struct _hbsdmon_ctx {
 	char				*hc_dest;
 	pushover_ctx_t			*hc_psh_ctx;
 	hbsdmon_keyvalue_store_t	*hc_kvstore;
+	void				*hc_zmq;
 	SLIST_HEAD(, _hbsdmon_node)	 hc_nodes;
 } hbsdmon_ctx_t;
 
@@ -64,6 +67,9 @@ void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,
     const char *, bool);
+void hbsdmon_free_kv(hbsdmon_keyvalue_store_t *,
+    hbsdmon_keyvalue_t **, bool);
+void hbsdmon_free_kvstore(hbsdmon_keyvalue_store_t **);
 
 hbsdmon_keyvalue_store_t *hbsdmon_new_kv_store(void);
 int hbsdmon_lock_kvstore(hbsdmon_keyvalue_store_t *);

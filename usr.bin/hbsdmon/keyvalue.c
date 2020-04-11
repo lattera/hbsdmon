@@ -198,3 +198,47 @@ hbsdmon_find_kv(hbsdmon_keyvalue_store_t *store, const char *key,
 	hbsdmon_unlock_kvstore(store);
 	return (NULL);
 }
+
+void
+hbsdmon_free_kv(hbsdmon_keyvalue_store_t *store,
+    hbsdmon_keyvalue_t **kvp, bool instore)
+{
+	hbsdmon_keyvalue_t *kv;
+
+	assert(kvp != NULL && *kvp != NULL);
+
+	kv = *kvp;
+
+	if (instore) {
+		assert(store != NULL);
+		hbsdmon_lock_kvstore(store);
+		SLIST_REMOVE(&(store->hks_store), kv,
+		    _hbsdmon_keyvalue, hk_entry);
+		hbsdmon_unlock_kvstore(store);
+	}
+
+	free(kv->hk_key);
+	free(kv->hk_value);
+	free(kv);
+	*kvp = NULL;
+}
+
+void
+hbsdmon_free_kvstore(hbsdmon_keyvalue_store_t **storep)
+{
+	hbsdmon_keyvalue_store_t *store;
+	hbsdmon_keyvalue_t *kv, *tkv;
+
+	assert(storep != NULL && *storep != NULL);
+
+	store = *storep;
+
+	SLIST_FOREACH_SAFE(kv, &(store->hks_store), hk_entry, tkv) {
+		hbsdmon_free_kv(store, &kv, true);
+	}
+
+	pthread_mutex_destroy(&(store->hks_mtx));
+
+	free(store);
+	*storep = NULL;
+}
