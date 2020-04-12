@@ -96,6 +96,7 @@ bool hbsdmon_keyvalue_modify(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *, void *, size_t, bool);
 uint64_t hbsdmon_keyvalue_to_uint64(hbsdmon_keyvalue_t *);
 int hbsdmon_keyvalue_to_int(hbsdmon_keyvalue_t *);
+char *hbsdmon_keyvalue_to_str(hbsdmon_keyvalue_t *);
 void hbsdmon_append_kv(hbsdmon_keyvalue_store_t *,
     hbsdmon_keyvalue_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv(hbsdmon_keyvalue_store_t *,

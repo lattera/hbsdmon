@@ -176,7 +176,8 @@ static void
 hbsdmon_node_fail(hbsdmon_thread_t *thread)
 {
 	pushover_message_t *pmsg;
-	char sndbuf[512];
+	hbsdmon_keyvalue_t *kv;
+	char *failmsg, sndbuf[512], *msgstr;
 
 	memset(sndbuf, 0, sizeof(sndbuf));
 	pmsg = pushover_init_message(NULL);
@@ -184,16 +185,35 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		return;
 	}
 
+	kv = hbsdmon_find_kv_in_node(thread->ht_node,
+	    "failmsg", true);
+
+	failmsg = "";
+	msgstr = NULL;
+
+	if (kv != NULL) {
+		failmsg = hbsdmon_keyvalue_to_str(kv);
+	}
+
+	asprintf(&msgstr, "%s (method %s) stopped responding to pings.%s%s",
+	    thread->ht_node->hn_host,
+	    hbsdmon_method_to_str(thread->ht_node->hn_method),
+	    kv != NULL ? " Custom message: " : "",
+	    failmsg);
+
+	if (msgstr == NULL) {
+		fprintf(stderr, "[-] Unable to send fail message.\n");
+		return;
+	}
+
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
 	snprintf(sndbuf, sizeof(sndbuf)-1, "Node %s unresponsive",
-		thread->ht_node->hn_host);
+	    thread->ht_node->hn_host);
 	pushover_message_set_title(pmsg, sndbuf);
-	snprintf(sndbuf, sizeof(sndbuf)-1,
-		"%s stopped responding to pings",
-		thread->ht_node->hn_host);
-	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_message_set_msg(pmsg, msgstr);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
+	free(msgstr);
 }
 
 void

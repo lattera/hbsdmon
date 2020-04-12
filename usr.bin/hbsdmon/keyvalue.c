@@ -168,6 +168,13 @@ hbsdmon_keyvalue_to_int(hbsdmon_keyvalue_t *kv)
 	return (res);
 }
 
+char *
+hbsdmon_keyvalue_to_str(hbsdmon_keyvalue_t *kv)
+{
+
+	return (char *)(kv->hk_value);
+}
+
 void
 hbsdmon_append_kv(hbsdmon_keyvalue_store_t *store,
     hbsdmon_keyvalue_t *kv)

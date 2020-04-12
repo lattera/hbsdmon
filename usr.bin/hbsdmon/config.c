@@ -191,6 +191,24 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 			return (false);
 		}
 
+		ucl_tmp = ucl_lookup_path(ucl_node, ".messages.fail");
+		if (ucl_tmp != NULL) {
+			str = ucl_object_tostring(ucl_tmp);
+			if (str == NULL) {
+				return (false);
+			}
+
+			kv = hbsdmon_new_keyvalue();
+			if (kv == NULL) {
+				return (false);
+			}
+			if (!hbsdmon_keyvalue_store(kv, "failmsg",
+			    (void *)str, strlen(str)+1)) {
+				return (false);
+			}
+			hbsdmon_node_append_kv(node, kv);
+		}
+
 		ucl_tmp = ucl_lookup_path(ucl_node, ".method");
 		if (ucl_tmp == NULL) {
 			fprintf(stderr, "[-] Method not defined for host %s\n",
