@@ -6,6 +6,7 @@ SRCS+=	hbsdmon.c
 SRCS+=	keyvalue.c
 SRCS+=	net_tcp.c
 SRCS+=	node.c
+SRCS+=	thread.c
 SRCS+=	util.c
 
 BINDIR?=	/usr/bin
@@ -17,6 +18,6 @@ CFLAGS+=	-I${.CURDIR} \
 LDFLAGS+=	-L${.CURDIR}/../../lib/libpushover \
 		-L/usr/local/lib
 
-LDADD+=		-lcurl -lpushover -lucl -lzmq
+LDADD+=		-lcurl -lpthread -lpushover -lucl -lzmq
 
 .include <bsd.prog.mk>

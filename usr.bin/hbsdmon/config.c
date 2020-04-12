@@ -66,6 +66,7 @@ new_ctx(void)
 	}
 
 	SLIST_INIT(&(ctx->hc_nodes));
+	SLIST_INIT(&(ctx->hc_threads));
 
 	return (ctx);
 }
