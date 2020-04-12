@@ -106,6 +106,6 @@ int hbsdmon_unlock_kvstore(hbsdmon_keyvalue_store_t *);
 
 bool hbsdmon_tcp_ping(hbsdmon_node_t *);
 
-hbsdmon_thread_t *hbsdmon_thread_init(hbsdmon_ctx_t *);
+bool hbsdmon_thread_init(hbsdmon_ctx_t *);
 
 #endif /* !_HBSDMON_H */

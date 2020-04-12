@@ -68,6 +68,8 @@ main(int argc, char *argv[])
 
 	res = 0;
 
+	hbsdmon_thread_init(ctx);
+
 	pushover_free_ctx(&(ctx->hc_psh_ctx));
 
 	return (res);

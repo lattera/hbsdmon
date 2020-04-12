@@ -34,16 +34,32 @@
 #include "hbsdmon.h"
 
 static void *hbsdmon_thread_start(void *);
+static bool hbsdmon_create_node_thread(hbsdmon_ctx_t *,
+    hbsdmon_node_t *);
 
-hbsdmon_thread_t *
+bool
 hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
+	hbsdmon_node_t *node, *tnode;
+
+	SLIST_FOREACH_SAFE(node, &(ctx->hc_nodes), hn_entry, tnode) {
+		if (hbsdmon_create_node_thread(ctx, node) == false) {
+			return (false);
+		}
+	}
+
+	return (true);
+}
+
+static bool
+hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
+{
 	hbsdmon_thread_t *thread;
 	hbsdmon_thread_msg_t msg;
 	char sockname[512];
 
 	thread = calloc(1, sizeof(*thread));
 	if (thread == NULL) {
-		return (NULL);
+		return (false);
 	}
 
 	thread->ht_ctx = ctx;
@@ -51,7 +67,7 @@ hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
 	thread->ht_zmqsock = zmq_socket(ctx->hc_zmq, ZMQ_PAIR);
 	if (thread->ht_zmqsock == NULL) {
 		free(thread);
-		return (NULL);
+		return (false);
 	}
 
 	snprintf(sockname, sizeof(sockname)-1, "inproc://thread_%zu",
@@ -61,14 +77,14 @@ hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
 	if (thread->ht_sockname == NULL) {
 		zmq_close(thread->ht_zmqsock);
 		free(thread);
-		return (NULL);
+		return (false);
 	}
 
 	if (zmq_bind(thread->ht_zmqsock, sockname)) {
 		zmq_close(thread->ht_zmqsock);
 		free(thread->ht_sockname);
 		free(thread);
-		return (NULL);
+		return (false);
 	}
 
 	if (pthread_create(&(thread->ht_tid), NULL,
@@ -76,19 +92,20 @@ hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
 		zmq_close(thread->ht_zmqsock);
 		free(thread->ht_sockname);
 		free(thread);
-		return (NULL);
+		return (false);
 	}
-
-	SLIST_INSERT_HEAD(&(ctx->hc_threads), thread, ht_entry);
 
 	/* Wait for the new thread to tell us it's ready */
 	zmq_recv(thread->ht_zmqsock, NULL, 0, 0);
 
 	memset(&msg, 0, sizeof(msg));
 	msg.htm_verb = VERB_INIT;
+	msg.htm_node = node;
 	zmq_send(thread->ht_zmqsock, &msg, sizeof(msg), 0);
 
-	return (thread);
+	SLIST_INSERT_HEAD(&(ctx->hc_threads), thread, ht_entry);
+
+	return (true);
 }
 
 static void *
@@ -96,6 +113,8 @@ hbsdmon_thread_start(void *argp)
 {
 	hbsdmon_thread_t *thread;
 	hbsdmon_thread_msg_t msg;
+	pushover_message_t *pmsg;
+	char sendbuf[512];
 	void *zmqsock;
 	int nrecv;
 
@@ -123,7 +142,23 @@ hbsdmon_thread_start(void *argp)
 
 		switch (msg.htm_verb) {
 		case VERB_INIT:
-			printf("Got init\n");
+			snprintf(sendbuf, sizeof(sendbuf)-1,
+			    "Now monitoring %s",
+			    msg.htm_node->hn_host);
+			pmsg = pushover_init_message(NULL);
+			if (pmsg == NULL) {
+				printf("NULL\n");
+				break;
+			}
+			pushover_message_set_user(pmsg,
+			    thread->ht_ctx->hc_dest);
+			pushover_message_set_title(pmsg,
+			    "MONITOR INIT");
+			pushover_message_set_msg(pmsg, sendbuf);
+			pushover_submit_message(
+			    thread->ht_ctx->hc_psh_ctx, pmsg);
+			pushover_free_message(&pmsg);
+
 			break;
 		case VERB_FINI:
 			printf("Got fini\n");

@@ -44,12 +44,6 @@ new_ctx(void)
 	if (ctx == NULL)
 		return (NULL);
 
-	ctx->hc_psh_ctx = pushover_init_ctx(NULL);
-	if (ctx->hc_psh_ctx == NULL) {
-		free(ctx);
-		return (NULL);
-	}
-
 	ctx->hc_kvstore = hbsdmon_new_kv_store();
 	if (ctx->hc_kvstore == NULL) {
 		pushover_free_ctx(&(ctx->hc_psh_ctx));
@@ -121,10 +115,7 @@ parse_config(hbsdmon_ctx_t *ctx)
 		goto end;
 	}
 
-	if (!pushover_set_token(get_psh_ctx(ctx), str)) {
-		res = false;
-		goto end;
-	}
+	ctx->hc_psh_ctx = pushover_init_ctx(str);
 
 	obj = ucl_lookup_path(top, ".dest");
 	if (obj == NULL) {
