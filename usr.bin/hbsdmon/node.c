@@ -228,13 +228,14 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 		return;
 	}
 
+	/* XXX check for errors */
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
 	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR INIT");
 	pushover_message_set_title(pmsg, sndbuf);
 	snprintf(sndbuf, sizeof(sndbuf)-1,
-		"Initializing %s monitor for %s",
-		hbsdmon_method_to_str(thread->ht_node->hn_method),
-		thread->ht_node->hn_host);
+	    "Initializing %s monitor for %s",
+	    hbsdmon_method_to_str(thread->ht_node->hn_method),
+	    thread->ht_node->hn_host);
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
