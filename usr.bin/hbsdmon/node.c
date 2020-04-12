@@ -35,6 +35,7 @@
 
 static bool hbsdmon_node_ping(hbsdmon_ctx_t *, hbsdmon_node_t *);
 static void hbsdmon_node_fail(hbsdmon_thread_t *);
+static void hbsdmon_node_success(hbsdmon_thread_t *);
 
 hbsdmon_node_t *
 hbsdmon_new_node(void)
@@ -135,6 +136,7 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 				kv = hbsdmon_find_kv_in_node(
 				    thread->ht_node, "lastfail", true);
 				if (kv != NULL) {
+					hbsdmon_node_success(thread);
 					hbsdmon_free_kv(hbsdmon_node_kv(
 					    thread->ht_node), &kv,
 					    true);
@@ -197,6 +199,7 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	if (kv != NULL) {
 		interval = (long)hbsdmon_keyvalue_to_uint64(kv);
 	}
+	interval--;
 
 	kv = hbsdmon_find_kv_in_node(thread->ht_node,
 	    "lastfail", true);
@@ -253,9 +256,31 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	    thread->ht_node->hn_host);
 	pushover_message_set_title(pmsg, sndbuf);
 	pushover_message_set_msg(pmsg, msgstr);
-	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
+	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
 	free(msgstr);
+}
+
+static void
+hbsdmon_node_success(hbsdmon_thread_t *thread)
+{
+	char sndbuf[512];
+	pushover_message_t *pmsg;
+
+	pmsg = pushover_init_message(NULL);
+	if (pmsg == NULL) {
+		return;
+	}
+
+	memset(sndbuf, 0, sizeof(sndbuf));
+	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "Node %s (method %s) back online",
+	    thread->ht_node->hn_host,
+	    hbsdmon_method_to_str(thread->ht_node->hn_method));
+	pushover_message_set_title(pmsg, "NODE ONLINE");
+	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
+	pushover_free_message(&pmsg);
 }
 
 void
