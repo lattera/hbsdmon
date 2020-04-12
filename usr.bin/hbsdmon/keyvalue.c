@@ -175,6 +175,20 @@ hbsdmon_keyvalue_to_str(hbsdmon_keyvalue_t *kv)
 	return (char *)(kv->hk_value);
 }
 
+time_t
+hbsdmon_keyvalue_to_time(hbsdmon_keyvalue_t *kv)
+{
+	time_t res;
+
+	assert(kv != NULL);
+	assert(kv->hk_value != NULL);
+	assert(kv->hk_value_len == sizeof(res));
+
+	res = *((time_t *)(kv->hk_value));
+
+	return (res);
+}
+
 void
 hbsdmon_append_kv(hbsdmon_keyvalue_store_t *store,
     hbsdmon_keyvalue_t *kv)

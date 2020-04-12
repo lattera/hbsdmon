@@ -128,7 +128,17 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			res = hbsdmon_node_ping(thread->ht_ctx,
 			    thread->ht_node);
 			if (res == true) {
-				/* Ping successful, continue on */
+				/*
+				 * Ping successful. Clear the last
+				 * fail time if it exists.
+				 */
+				kv = hbsdmon_find_kv_in_node(
+				    thread->ht_node, "lastfail", true);
+				if (kv != NULL) {
+					hbsdmon_free_kv(hbsdmon_node_kv(
+					    thread->ht_node), &kv,
+					    true);
+				}
 				continue;
 			}
 
@@ -175,13 +185,39 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 static void
 hbsdmon_node_fail(hbsdmon_thread_t *thread)
 {
+	char *failmsg, sndbuf[512], *msgstr;
+	time_t lastfail, tlastfail;
 	pushover_message_t *pmsg;
 	hbsdmon_keyvalue_t *kv;
-	char *failmsg, sndbuf[512], *msgstr;
+	long interval;
 
-	memset(sndbuf, 0, sizeof(sndbuf));
-	pmsg = pushover_init_message(NULL);
-	if (pmsg == NULL) {
+	interval = 5;
+	kv = hbsdmon_find_kv_in_node(thread->ht_node,
+	    "interval", false);
+	if (kv != NULL) {
+		interval = (long)hbsdmon_keyvalue_to_uint64(kv);
+	}
+
+	kv = hbsdmon_find_kv_in_node(thread->ht_node,
+	    "lastfail", true);
+
+	lastfail = 0;
+	if (kv != NULL) {
+		lastfail = hbsdmon_keyvalue_to_time(kv);
+	} else {
+		lastfail = time(NULL);
+		kv = hbsdmon_new_keyvalue();
+		if (kv == NULL) {
+			return;
+		}
+		hbsdmon_keyvalue_store(kv, "lastfail",
+		    &lastfail, sizeof(lastfail));
+		hbsdmon_node_append_kv(thread->ht_node, kv);
+	}
+
+	/* XXX make this dynamic */
+	lastfail = time(NULL) - lastfail;
+	if (lastfail > interval && lastfail < 7200) {
 		return;
 	}
 
@@ -203,6 +239,12 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 
 	if (msgstr == NULL) {
 		fprintf(stderr, "[-] Unable to send fail message.\n");
+		return;
+	}
+
+	memset(sndbuf, 0, sizeof(sndbuf));
+	pmsg = pushover_init_message(NULL);
+	if (pmsg == NULL) {
 		return;
 	}
 
