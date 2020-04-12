@@ -14,7 +14,9 @@ typedef enum _hbsdmon_method {
 	METHOD_HTTP,
 	METHOD_HTTPS,
 	METHOD_ICMP,
+	METHOD_SSH,
 	METHOD_TCP,
+	METHOD_TOR,
 } hbsdmon_method_t;
 
 typedef enum _hbsdmon_thread_msg_verb {
