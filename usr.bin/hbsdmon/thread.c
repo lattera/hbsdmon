@@ -38,6 +38,7 @@ static void *hbsdmon_thread_start(void *);
 hbsdmon_thread_t *
 hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
 	hbsdmon_thread_t *thread;
+	hbsdmon_thread_msg_t msg;
 	char sockname[512];
 
 	thread = calloc(1, sizeof(*thread));
@@ -80,6 +81,13 @@ hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
 
 	SLIST_INSERT_HEAD(&(ctx->hc_threads), thread, ht_entry);
 
+	/* Wait for the new thread to tell us it's ready */
+	zmq_recv(thread->ht_zmqsock, NULL, 0, 0);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.htm_verb = VERB_INIT;
+	zmq_send(thread->ht_zmqsock, &msg, sizeof(msg), 0);
+
 	return (thread);
 }
 
@@ -87,14 +95,45 @@ static void *
 hbsdmon_thread_start(void *argp)
 {
 	hbsdmon_thread_t *thread;
+	hbsdmon_thread_msg_t msg;
+	void *zmqsock;
+	int nrecv;
 
 	assert(argp != NULL);
 
 	thread = argp;
 
-	if (zmq_connect(thread->ht_zmqsock, thread->ht_sockname)) {
+	zmqsock = zmq_socket(thread->ht_ctx->hc_zmq, ZMQ_PAIR);
+	if (zmqsock == NULL) {
 		return (argp);
 	}
 
+	if (zmq_connect(zmqsock, thread->ht_sockname)) {
+		goto end;
+	}
+
+	zmq_send(zmqsock, NULL, 0, 0);
+
+	while (true) {
+		memset(&msg, 0, sizeof(msg));
+		nrecv = zmq_recv(zmqsock, &msg, sizeof(msg), 0);
+		if (nrecv != sizeof(msg)) {
+			goto end;
+		}
+
+		switch (msg.htm_verb) {
+		case VERB_INIT:
+			printf("Got init\n");
+			break;
+		case VERB_FINI:
+			printf("Got fini\n");
+			goto end;
+		default:
+			break;
+		}
+	}
+
+end:
+	zmq_close(zmqsock);
 	return (argp);
 }
