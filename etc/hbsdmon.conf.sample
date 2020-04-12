@@ -1,14 +1,22 @@
 {
-	token: "pushover_api_token",
-	dest: "pushover_destination",
+	token: "apitoken",
+	dest: "destination user token",
+	interval: 600,
 	nodes: [
 		{
-			host: "ad-01.md.hardenedbsd.org",
-			method: "ICMP"
+			host: "ci-01.nyi.hardenedbsd.org",
+			method: "HTTP",
+		},
+		{
+			host: "ci-02.nyi.hardenedbsd.org",
+			method: "HTTP",
+			messages: {
+				fail: "Custom fail message.",
+			}
 		},
 		{
 			host: "git-01.md.hardenedbsd.org",
-			method: "HTTPS",
+			method: "TCP",
 			port: 443,
 		}
 	]
