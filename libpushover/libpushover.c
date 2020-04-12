@@ -236,6 +236,8 @@ pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 	if (post_str == NULL)
 		goto end;
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_str);
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
 
 	curl_code = curl_easy_perform(curl);
 	res = (curl_code == CURLE_OK);
