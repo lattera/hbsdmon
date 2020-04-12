@@ -46,8 +46,10 @@ typedef struct _hbsdmon_thread {
 	uint64_t			 ht_flags;
 	pthread_t			 ht_tid;
 	void				*ht_zmqsock;
+	void				*ht_zmqtsock;
 	char				*ht_sockname;
 	struct _hbsdmon_ctx		*ht_ctx;
+	hbsdmon_node_t			*ht_node;
 	SLIST_ENTRY(_hbsdmon_thread)	 ht_entry;
 } hbsdmon_thread_t;
 
@@ -84,6 +86,8 @@ void hbsdmon_node_append_kv(hbsdmon_node_t *, hbsdmon_keyvalue_t *);
 void hbsdmon_node_debug_print(hbsdmon_node_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
     const char *, bool);
+void hbsdmon_node_thread_init(hbsdmon_thread_t *);
+bool hbsdmon_node_thread_run(hbsdmon_thread_t *);
 
 hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
 bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,

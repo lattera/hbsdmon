@@ -56,19 +56,14 @@ main(int argc, char *argv[])
 		return (1);
 	}
 
-	SLIST_FOREACH_SAFE(node, &(ctx->hc_nodes), hn_entry, tnode) {
-		switch (node->hn_method) {
-		case METHOD_TCP:
-			hbsdmon_tcp_ping(node);
-			break;
-		default:
-			break;
-		}
-	}
-
 	res = 0;
 
-	hbsdmon_thread_init(ctx);
+	if (hbsdmon_thread_init(ctx) == false) {
+		res = 1;
+	}
+
+	while (true) {
+	}
 
 	pushover_free_ctx(&(ctx->hc_psh_ctx));
 

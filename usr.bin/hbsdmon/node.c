@@ -33,6 +33,9 @@
 
 #include "hbsdmon.h"
 
+static bool hbsdmon_node_ping(hbsdmon_ctx_t *, hbsdmon_node_t *);
+static void hbsdmon_node_fail(hbsdmon_thread_t *);
+
 hbsdmon_node_t *
 hbsdmon_new_node(void)
 {
@@ -76,6 +79,67 @@ hbsdmon_find_kv_in_node(hbsdmon_node_t *node, const char *key,
 	return (hbsdmon_find_kv(hbsdmon_node_kv(node), key, icase));
 }
 
+bool
+hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
+{
+	hbsdmon_thread_msg_t tmsg;
+	pushover_message_t *pmsg;
+	zmq_pollitem_t pollitem;
+	hbsdmon_keyvalue_t *kv;
+	char sndbuf[512];
+	long timeout;
+	int nevents, res;
+
+	while (true) {
+		timeout = 5000;
+		kv = hbsdmon_find_kv_in_node(thread->ht_node,
+		    "interval", false);
+		if (kv != NULL) {
+			timeout = (long)hbsdmon_keyvalue_to_uint64(kv);
+		}
+
+		memset(&pollitem, 0, sizeof(pollitem));
+		pollitem.socket = thread->ht_zmqtsock;
+		pollitem.events = ZMQ_POLLIN;
+
+		nevents = zmq_poll(&pollitem, 1, timeout);
+		if (nevents > 0) {
+			if (zmq_recv(thread->ht_zmqtsock, &tmsg,
+			    sizeof(tmsg), 0) == -1) {
+				/* Unrecoverable error */
+				return (false);
+			}
+
+			switch (tmsg.htm_verb) {
+			case VERB_INIT:
+				break;
+			case VERB_FINI:
+				return (true);
+			default:
+				return (true);
+			}
+		}
+
+		if (nevents == 0) {
+			/*
+			 * XXX properly calculate ping time based on
+			 * last ping.
+			 */
+			res = hbsdmon_node_ping(thread->ht_ctx,
+			    thread->ht_node);
+			if (res == true) {
+				/* Ping successful, continue on */
+				continue;
+			}
+
+			hbsdmon_node_fail(thread);
+			continue;
+		}
+	}
+
+	return (true);
+}
+
 void
 hbsdmon_node_debug_print(hbsdmon_node_t *node)
 {
@@ -90,4 +154,58 @@ hbsdmon_node_debug_print(hbsdmon_node_t *node)
 		printf("    Key: %s\n", kv->hk_key);
 		printf("    &Value: %p\n", kv->hk_value);
 	}
+}
+
+static bool
+hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
+{
+
+	return (false);
+}
+
+static void
+hbsdmon_node_fail(hbsdmon_thread_t *thread)
+{
+	pushover_message_t *pmsg;
+	char sndbuf[512];
+
+	memset(sndbuf, 0, sizeof(sndbuf));
+	pmsg = pushover_init_message(NULL);
+	if (pmsg == NULL) {
+		return;
+	}
+
+	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "Node %s unresponsive",
+		thread->ht_node->hn_host);
+	pushover_message_set_title(pmsg, sndbuf);
+	snprintf(sndbuf, sizeof(sndbuf)-1,
+		"%s stopped responding to pings",
+		thread->ht_node->hn_host);
+	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
+	pushover_free_message(&pmsg);
+}
+
+void
+hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
+{
+	pushover_message_t *pmsg;
+	char sndbuf[512];
+
+	memset(sndbuf, 0, sizeof(sndbuf));
+	pmsg = pushover_init_message(NULL);
+	if (pmsg == NULL) {
+		return;
+	}
+
+	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR INIT");
+	pushover_message_set_title(pmsg, sndbuf);
+	snprintf(sndbuf, sizeof(sndbuf)-1,
+		"Initializing monitor for %s",
+		thread->ht_node->hn_host);
+	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
+	pushover_free_message(&pmsg);
 }

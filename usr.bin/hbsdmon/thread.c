@@ -63,6 +63,7 @@ hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	}
 
 	thread->ht_ctx = ctx;
+	thread->ht_node = node;
 
 	thread->ht_zmqsock = zmq_socket(ctx->hc_zmq, ZMQ_PAIR);
 	if (thread->ht_zmqsock == NULL) {
@@ -98,9 +99,9 @@ hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	/* Wait for the new thread to tell us it's ready */
 	zmq_recv(thread->ht_zmqsock, NULL, 0, 0);
 
+	/* Send init message */
 	memset(&msg, 0, sizeof(msg));
 	msg.htm_verb = VERB_INIT;
-	msg.htm_node = node;
 	zmq_send(thread->ht_zmqsock, &msg, sizeof(msg), 0);
 
 	SLIST_INSERT_HEAD(&(ctx->hc_threads), thread, ht_entry);
@@ -131,42 +132,29 @@ hbsdmon_thread_start(void *argp)
 		goto end;
 	}
 
+	thread->ht_zmqtsock = zmqsock;
+
+	/* Tell the main thread we're ready */
 	zmq_send(zmqsock, NULL, 0, 0);
 
-	while (true) {
-		memset(&msg, 0, sizeof(msg));
-		nrecv = zmq_recv(zmqsock, &msg, sizeof(msg), 0);
-		if (nrecv != sizeof(msg)) {
-			goto end;
-		}
-
-		switch (msg.htm_verb) {
-		case VERB_INIT:
-			snprintf(sendbuf, sizeof(sendbuf)-1,
-			    "Now monitoring %s",
-			    msg.htm_node->hn_host);
-			pmsg = pushover_init_message(NULL);
-			if (pmsg == NULL) {
-				printf("NULL\n");
-				break;
-			}
-			pushover_message_set_user(pmsg,
-			    thread->ht_ctx->hc_dest);
-			pushover_message_set_title(pmsg,
-			    "MONITOR INIT");
-			pushover_message_set_msg(pmsg, sendbuf);
-			pushover_submit_message(
-			    thread->ht_ctx->hc_psh_ctx, pmsg);
-			pushover_free_message(&pmsg);
-
-			break;
-		case VERB_FINI:
-			printf("Got fini\n");
-			goto end;
-		default:
-			break;
-		}
+	/* Wait for main thread to send us our first message */
+	if (zmq_recv(thread->ht_zmqtsock, &msg,
+	   sizeof(msg), 0) == -1) {
+		/* Unrecoverable error */
+		return (false);
 	}
+
+	switch (msg.htm_verb) {
+	case VERB_INIT:
+		hbsdmon_node_thread_init(thread);
+		break;
+	case VERB_FINI:
+		return (argp);
+	default:
+		return (argp);
+	}
+
+	hbsdmon_node_thread_run(thread);
 
 end:
 	zmq_close(zmqsock);
