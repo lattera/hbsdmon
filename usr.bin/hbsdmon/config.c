@@ -208,6 +208,7 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 		switch (node->hn_method) {
 		case METHOD_HTTP:
 		case METHOD_HTTPS:
+			break;
 		case METHOD_TCP:
 			ucl_tmp = ucl_lookup_path(ucl_node, ".port");
 			if (ucl_tmp == NULL) {

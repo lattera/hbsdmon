@@ -163,6 +163,8 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	switch (node->hn_method) {
 	case METHOD_TCP:
 		return (hbsdmon_tcp_ping(node));
+	case METHOD_HTTP:
+		return (hbsdmon_http_ping(node));
 	default:
 		break;
 	}
@@ -210,7 +212,8 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR INIT");
 	pushover_message_set_title(pmsg, sndbuf);
 	snprintf(sndbuf, sizeof(sndbuf)-1,
-		"Initializing monitor for %s",
+		"Initializing %s monitor for %s",
+		hbsdmon_method_to_str(thread->ht_node->hn_method),
 		thread->ht_node->hn_host);
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);

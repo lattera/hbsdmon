@@ -88,3 +88,28 @@ end:
 	freeaddrinfo(servinfo);
 	return (ret);
 }
+
+bool
+hbsdmon_http_ping(hbsdmon_node_t *node)
+{
+	CURLcode curlcode;
+	char url[512];
+	CURL *curl;
+	bool res;
+
+	res = false;
+	curl = curl_easy_init();
+	if (curl == NULL) {
+		return (false);
+	}
+
+	snprintf(url, sizeof(url)-1, "http://%s/", node->hn_host);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
+	curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
+	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+	curlcode = curl_easy_perform(curl);
+
+	curl_easy_cleanup(curl);
+	return (curlcode == CURLE_OK);
+}

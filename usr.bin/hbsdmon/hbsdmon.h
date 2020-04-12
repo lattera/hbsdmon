@@ -109,6 +109,7 @@ int hbsdmon_lock_kvstore(hbsdmon_keyvalue_store_t *);
 int hbsdmon_unlock_kvstore(hbsdmon_keyvalue_store_t *);
 
 bool hbsdmon_tcp_ping(hbsdmon_node_t *);
+bool hbsdmon_http_ping(hbsdmon_node_t *);
 
 bool hbsdmon_thread_init(hbsdmon_ctx_t *);
 
