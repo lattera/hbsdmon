@@ -160,7 +160,14 @@ static bool
 hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 {
 
-	return (false);
+	switch (node->hn_method) {
+	case METHOD_TCP:
+		return (hbsdmon_tcp_ping(node));
+	default:
+		break;
+	}
+
+	return (true);
 }
 
 static void
