@@ -20,4 +20,7 @@ LDFLAGS+=	-L${.CURDIR}/../../lib/libpushover \
 
 LDADD+=		-lcurl -lpthread -lpushover -lucl -lzmq
 
+CFLAGS+=	-fPIE -flto -fvisibility=hidden -fsanitize=cfi -fsanitize=safe-stack
+LDFLAGS+=	-fPIE -pie -flto -fsanitize=cfi -fsanitize=safe-stack
+
 .include <bsd.prog.mk>
