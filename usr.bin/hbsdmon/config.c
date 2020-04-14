@@ -258,7 +258,7 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 		}
 
 		SLIST_INSERT_HEAD(&(ctx->hc_nodes), node, hn_entry);
-		hbsdmon_node_debug_print(node);
+		ctx->hc_nnodes++;
 	}
 
 	return (true);

@@ -32,6 +32,8 @@
 
 #include "hbsdmon.h"
 
+static void main_loop(hbsdmon_ctx_t *);
+
 int
 main(int argc, char *argv[])
 {
@@ -62,10 +64,66 @@ main(int argc, char *argv[])
 		res = 1;
 	}
 
-	while (true) {
-	}
+	/*
+	 * In the current design, the number of threads must equal the
+	 * number of nodes. Our threading model is 1:1 between threads
+	 * and nodes.
+	 */
+	assert(ctx->hc_nthreads == ctx->hc_nnodes);
 
+	main_loop(ctx);
 	pushover_free_ctx(&(ctx->hc_psh_ctx));
 
 	return (res);
+}
+
+static void
+main_loop(hbsdmon_ctx_t *ctx)
+{
+	hbsdmon_thread_t *thread, *tmpthread;
+	zmq_pollitem_t *pollitems;
+	hbsdmon_thread_msg_t msg;
+	hbsdmon_node_t *node;
+	int i, nitems;
+
+	pollitems = calloc(ctx->hc_nnodes, sizeof(*pollitems));
+	if (pollitems == NULL) {
+		return;
+	}
+
+	while (true) {
+		/*
+		 * XXX I really dislike that ZeroMQ went with signed 
+		 * integers.
+		 */
+		memset(pollitems, 0, ctx->hc_nthreads * sizeof(*pollitems));
+
+		nitems = 0;
+		SLIST_FOREACH_SAFE(thread, &(ctx->hc_threads), ht_entry,
+		    tmpthread) {
+			pollitems[nitems].socket = thread->ht_zmqsock;
+			pollitems[nitems].events = ZMQ_POLLIN;
+			nitems++;
+		}
+
+		nitems = zmq_poll(pollitems, nitems, -1);
+		if (nitems == -1) {
+			break;
+		}
+		if (nitems == 0) {
+			continue;
+		}
+
+		for (i = 0; i < ctx->hc_nthreads; i++) {
+			if (pollitems[i].revents & ZMQ_POLLIN) {
+				node = hbsdmon_find_node_by_zmqsock(
+				    ctx, pollitems[i].socket);
+				memset(&msg, 0, sizeof(msg));
+				nitems = zmq_recv(pollitems[i].socket,
+				    &msg, sizeof(msg), 0);
+				assert(nitems == sizeof(msg));
+				/* TODO: Do the needful */
+			}
+		}
+	}
 }

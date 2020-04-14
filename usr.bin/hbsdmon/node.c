@@ -152,6 +152,22 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 	return (true);
 }
 
+hbsdmon_node_t *
+hbsdmon_find_node_by_zmqsock(hbsdmon_ctx_t *ctx, void *sock)
+{
+	hbsdmon_thread_t *thread, *tmpthread;
+
+	SLIST_FOREACH_SAFE(thread, &(ctx->hc_threads), ht_entry,
+	    tmpthread) {
+		if (thread->ht_zmqsock == sock) {
+			return (thread->ht_node);
+		}
+	}
+
+	/* XXX should we assert instead? */
+	return (NULL);
+}
+
 void
 hbsdmon_node_debug_print(hbsdmon_node_t *node)
 {
@@ -189,6 +205,7 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 {
 	char *failmsg, sndbuf[512], *msgstr;
 	time_t lastfail, tlastfail;
+	hbsdmon_thread_msg_t tmsg;
 	pushover_message_t *pmsg;
 	hbsdmon_keyvalue_t *kv;
 	long interval;
@@ -258,6 +275,11 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	pushover_message_set_msg(pmsg, msgstr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
+
+	memset(&tmsg, 0, sizeof(tmsg));
+	tmsg.htm_verb = VERB_HEARTBEAT;
+	zmq_send(thread->ht_zmqtsock, &tmsg, sizeof(tmsg), 0);
+
 	free(msgstr);
 }
 

@@ -73,6 +73,7 @@ typedef struct _hbsdmon_ctx {
 	hbsdmon_keyvalue_store_t	*hc_kvstore;
 	void				*hc_zmq;
 	size_t				 hc_nthreads;
+	size_t				 hc_nnodes;
 	SLIST_HEAD(, _hbsdmon_node)	 hc_nodes;
 	SLIST_HEAD(, _hbsdmon_thread)	 hc_threads;
 } hbsdmon_ctx_t;
@@ -91,6 +92,7 @@ hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
     const char *, bool);
 void hbsdmon_node_thread_init(hbsdmon_thread_t *);
 bool hbsdmon_node_thread_run(hbsdmon_thread_t *);
+hbsdmon_node_t *hbsdmon_find_node_by_zmqsock(hbsdmon_ctx_t *, void *);
 
 hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
 bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
