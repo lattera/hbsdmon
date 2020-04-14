@@ -32,6 +32,7 @@
 #include "libpushover.h"
 
 static char *msg_to_str(pushover_ctx_t *, pushover_message_t *, CURL *);
+static size_t pushover_curl_write_data(void *, size_t, size_t, void *);
 
 EXPORTED_SYM
 pushover_ctx_t *
@@ -238,6 +239,8 @@ pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, post_str);
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+	curl_easy_setopt(curl, CURLOPT_STDERR, NULL);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, pushover_curl_write_data);
 
 	curl_code = curl_easy_perform(curl);
 	res = (curl_code == CURLE_OK);
@@ -299,6 +302,14 @@ end:
 	curl_free(t_user);
 
 	return (res);
+}
+
+static size_t
+pushover_curl_write_data(void *buffer, size_t sz, size_t nmemb,
+    void *usrp)
+{
+
+	return (sz * nmemb);
 }
 
 __attribute__((constructor))
