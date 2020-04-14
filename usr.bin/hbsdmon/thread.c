@@ -64,9 +64,11 @@ hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 
 	thread->ht_ctx = ctx;
 	thread->ht_node = node;
+	node->hn_thread = thread;
 
 	thread->ht_zmqsock = zmq_socket(ctx->hc_zmq, ZMQ_PAIR);
 	if (thread->ht_zmqsock == NULL) {
+		node->hn_thread = NULL;
 		free(thread);
 		return (false);
 	}
@@ -77,6 +79,7 @@ hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	thread->ht_sockname = strdup(sockname);
 	if (thread->ht_sockname == NULL) {
 		zmq_close(thread->ht_zmqsock);
+		node->hn_thread = NULL;
 		free(thread);
 		return (false);
 	}
@@ -84,6 +87,7 @@ hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	if (zmq_bind(thread->ht_zmqsock, sockname)) {
 		zmq_close(thread->ht_zmqsock);
 		free(thread->ht_sockname);
+		node->hn_thread = NULL;
 		free(thread);
 		return (false);
 	}
@@ -91,6 +95,7 @@ hbsdmon_create_node_thread(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	if (pthread_create(&(thread->ht_tid), NULL,
 	    hbsdmon_thread_start, thread)) {
 		zmq_close(thread->ht_zmqsock);
+		node->hn_thread = NULL;
 		free(thread->ht_sockname);
 		free(thread);
 		return (false);

@@ -10,6 +10,7 @@
 #include "libpushover.h"
 
 struct _hbsdmon_ctx;
+struct _hbsdmon_thread;
 
 typedef enum _hbsdmon_method {
 	METHOD_HTTP,
@@ -40,6 +41,7 @@ typedef struct _hbsdmon_keyvalue_store {
 
 typedef struct _hbsdmon_node {
 	char				*hn_host;
+	struct _hbsdmon_thread		*hn_thread;
 	hbsdmon_method_t		 hn_method;
 	hbsdmon_keyvalue_store_t	*hn_kvstore;
 	SLIST_ENTRY(_hbsdmon_node)	 hn_entry;

@@ -38,6 +38,9 @@
 
 #include "hbsdmon.h"
 
+static size_t hbsdmon_curl_write_data(void *, size_t,
+    size_t, void *);
+
 bool
 hbsdmon_tcp_ping(hbsdmon_node_t *node)
 {
@@ -108,8 +111,18 @@ hbsdmon_http_ping(hbsdmon_node_t *node)
 	curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
 	curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+	curl_easy_setopt(curl, CURLOPT_STDERR, NULL);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+	    hbsdmon_curl_write_data);
 	curlcode = curl_easy_perform(curl);
 
 	curl_easy_cleanup(curl);
 	return (curlcode == CURLE_OK);
+}
+
+static size_t hbsdmon_curl_write_data(void *buffer, size_t sz,
+    size_t nmemb, void *usrp)
+{
+
+	return (sz * nmemb);
 }

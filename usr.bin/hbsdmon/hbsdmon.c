@@ -33,6 +33,8 @@
 #include "hbsdmon.h"
 
 static void main_loop(hbsdmon_ctx_t *);
+static bool main_handle_message(hbsdmon_ctx_t *, hbsdmon_node_t *,
+    hbsdmon_thread_msg_t *);
 
 int
 main(int argc, char *argv[])
@@ -122,8 +124,37 @@ main_loop(hbsdmon_ctx_t *ctx)
 				nitems = zmq_recv(pollitems[i].socket,
 				    &msg, sizeof(msg), 0);
 				assert(nitems == sizeof(msg));
-				/* TODO: Do the needful */
+				if (main_handle_message(ctx, node,
+				    &msg) == false) {
+					fprintf(stderr, "Main thread:"
+					    " Unable to handle message"
+					    " from node %s (method %s)",
+					    node->hn_host,
+					    hbsdmon_method_to_str(node->hn_method));
+					return;
+				}
 			}
 		}
 	}
+}
+
+static bool
+main_handle_message(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node,
+    hbsdmon_thread_msg_t *msg)
+{
+
+	switch (msg->htm_verb) {
+	case VERB_HEARTBEAT:
+		printf("Main: Got heartbeat from %s (method %s)\n",
+		    node->hn_host,
+		    hbsdmon_method_to_str(node->hn_method));
+		break;
+	default:
+		printf("Main: Got unknown message from %s"
+		    " (method %s)\n",
+		    node->hn_host,
+		    hbsdmon_method_to_str(node->hn_method));
+	}
+
+	return (true);
 }
