@@ -25,6 +25,7 @@ typedef enum _hbsdmon_thread_msg_verb {
 	VERB_INIT,
 	VERB_FINI,
 	VERB_HEARTBEAT,
+	VERB_TERM,
 } hbsdmon_thread_msg_verb_t;
 
 typedef struct _hbsdmon_keyvalue {
@@ -64,6 +65,7 @@ typedef struct _hbsdmon_thread_msg {
 	union {
 		void			*htm_void;
 		hbsdmon_node_t		*htm_node;
+		hbsdmon_thread_t	*htm_thread;
 		uint64_t		 htm_uint64;
 	};
 } hbsdmon_thread_msg_t;
@@ -76,6 +78,7 @@ typedef struct _hbsdmon_ctx {
 	void				*hc_zmq;
 	size_t				 hc_nthreads;
 	size_t				 hc_nnodes;
+	pthread_mutex_t			 hc_mtx;
 	SLIST_HEAD(, _hbsdmon_node)	 hc_nodes;
 	SLIST_HEAD(, _hbsdmon_thread)	 hc_threads;
 } hbsdmon_ctx_t;

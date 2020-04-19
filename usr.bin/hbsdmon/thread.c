@@ -36,6 +36,9 @@
 static void *hbsdmon_thread_start(void *);
 static bool hbsdmon_create_node_thread(hbsdmon_ctx_t *,
     hbsdmon_node_t *);
+static void hbsdmon_thread_notify(hbsdmon_thread_t *,
+    hbsdmon_thread_msg_t *);
+static void hbsdmon_thread_exit(hbsdmon_thread_t *);
 
 bool
 hbsdmon_thread_init(hbsdmon_ctx_t *ctx) {
@@ -153,15 +156,43 @@ hbsdmon_thread_start(void *argp)
 	case VERB_INIT:
 		hbsdmon_node_thread_init(thread);
 		break;
+	case VERB_TERM:
 	case VERB_FINI:
-		return (argp);
 	default:
-		return (argp);
+		goto end;
 	}
 
 	hbsdmon_node_thread_run(thread);
 
 end:
-	zmq_close(zmqsock);
-	return (argp);
+	hbsdmon_thread_exit(thread);
+	return (NULL);
+}
+
+static void
+hbsdmon_thread_notify(hbsdmon_thread_t *thread,
+    hbsdmon_thread_msg_t *msg)
+{
+
+	assert(zmq_send(thread->ht_zmqtsock, msg,
+	    sizeof(*msg), 0) == sizeof(*msg));
+}
+
+static void
+hbsdmon_thread_exit(hbsdmon_thread_t *thread)
+{
+	hbsdmon_thread_msg_t msg;
+
+	printf("[*] Thread: Exiting\n");
+
+	if (thread == NULL || thread->ht_zmqtsock == NULL) {
+		return;
+	}
+
+	memset(&msg, 0, sizeof(msg));
+	msg.htm_verb = VERB_TERM;
+	msg.htm_thread = thread;
+	hbsdmon_thread_notify(thread, &msg);
+	zmq_close(thread->ht_zmqtsock);
+	pthread_exit(NULL);
 }

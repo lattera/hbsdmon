@@ -36,6 +36,8 @@
 static bool hbsdmon_node_ping(hbsdmon_ctx_t *, hbsdmon_node_t *);
 static void hbsdmon_node_fail(hbsdmon_thread_t *);
 static void hbsdmon_node_success(hbsdmon_thread_t *);
+static void hbsdmon_node_notify(hbsdmon_node_t *,
+    hbsdmon_thread_msg_t *);
 
 hbsdmon_node_t *
 hbsdmon_new_node(void)
@@ -114,8 +116,8 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			switch (tmsg.htm_verb) {
 			case VERB_INIT:
 				break;
+			case VERB_TERM:
 			case VERB_FINI:
-				return (true);
 			default:
 				return (true);
 			}

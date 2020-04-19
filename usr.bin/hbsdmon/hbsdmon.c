@@ -30,11 +30,25 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <pthread_np.h>
+
+#include <signal.h>
+
 #include "hbsdmon.h"
+
+#define	APPFLAG_NONE	 0
+#define	APPFLAG_TERM	 1
+#define	APPFLAG_INFO	 2
+
+static uint64_t appflags = 0;
+
+static void sighandler(int);
 
 static void main_loop(hbsdmon_ctx_t *);
 static bool main_handle_message(hbsdmon_ctx_t *, hbsdmon_node_t *,
     hbsdmon_thread_msg_t *);
+static void dispatch_signal(hbsdmon_ctx_t *);
+static void dispatch_term(hbsdmon_ctx_t *);
 
 int
 main(int argc, char *argv[])
@@ -60,7 +74,13 @@ main(int argc, char *argv[])
 		return (1);
 	}
 
+	pthread_mutex_init(&(ctx->hc_mtx), NULL);
+
 	res = 0;
+
+	signal(SIGINT, sighandler);
+	signal(SIGINFO, sighandler);
+	signal(SIGTERM, sighandler);
 
 	if (hbsdmon_thread_init(ctx) == false) {
 		res = 1;
@@ -86,6 +106,7 @@ main_loop(hbsdmon_ctx_t *ctx)
 	zmq_pollitem_t *pollitems;
 	hbsdmon_thread_msg_t msg;
 	hbsdmon_node_t *node;
+	bool breakout;
 	int i, nitems;
 
 	pollitems = calloc(ctx->hc_nnodes, sizeof(*pollitems));
@@ -93,6 +114,7 @@ main_loop(hbsdmon_ctx_t *ctx)
 		return;
 	}
 
+	breakout = false;
 	while (true) {
 		/*
 		 * XXX I really dislike that ZeroMQ went with signed 
@@ -108,12 +130,21 @@ main_loop(hbsdmon_ctx_t *ctx)
 			nitems++;
 		}
 
-		nitems = zmq_poll(pollitems, nitems, -1);
-		if (nitems == -1) {
-			break;
-		}
-		if (nitems == 0) {
-			continue;
+		nitems = zmq_poll(pollitems, nitems, 1000);
+
+		if (appflags) {
+			pthread_mutex_lock(&(ctx->hc_mtx));
+			if ((appflags & APPFLAG_TERM)  ==
+			    APPFLAG_TERM) {
+				breakout = true;
+			}
+			dispatch_signal(ctx);
+			appflags = 0;
+			pthread_mutex_unlock(&(ctx->hc_mtx));
+
+			if (breakout) {
+				break;
+			}
 		}
 
 		for (i = 0; i < ctx->hc_nthreads; i++) {
@@ -149,6 +180,9 @@ main_handle_message(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node,
 		    node->hn_host,
 		    hbsdmon_method_to_str(node->hn_method));
 		break;
+	case VERB_TERM:
+		pthread_join(node->hn_thread->ht_tid, NULL);
+		break;
 	default:
 		printf("Main: Got unknown message from %s"
 		    " (method %s)\n",
@@ -157,4 +191,66 @@ main_handle_message(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node,
 	}
 
 	return (true);
+}
+
+static void
+sighandler(int signo)
+{
+
+	printf("[*] Main thread: Got signal (%d)\n", signo);
+	switch (signo) {
+	case SIGINT:
+	case SIGTERM:
+		appflags |= APPFLAG_TERM;
+		break;
+	case SIGINFO:
+		appflags |= APPFLAG_INFO;
+		break;
+	}
+}
+
+static void
+dispatch_signal(hbsdmon_ctx_t *ctx)
+{
+
+	if ((appflags & APPFLAG_TERM)  == APPFLAG_TERM) {
+		dispatch_term(ctx);
+	}
+}
+
+static void
+dispatch_term(hbsdmon_ctx_t *ctx)
+{
+	hbsdmon_thread_t *thread, *tthread;
+	hbsdmon_thread_msg_t msg;
+	zmq_pollitem_t zmqpoll;
+	int res;
+
+	printf("[*] Main thread: dispatching term.\n");
+
+	SLIST_FOREACH_SAFE(thread, &(ctx->hc_threads), ht_entry,
+	   tthread) {
+		memset(&msg, 0, sizeof(msg));
+		msg.htm_verb = VERB_TERM;
+		res = zmq_send(thread->ht_zmqsock, &msg,
+		    sizeof(msg), 0);
+		assert(res == sizeof(msg));
+
+		/* Allow the thread one second to clean up. */
+		memset(&zmqpoll, 0, sizeof(zmqpoll));
+		zmqpoll.socket = thread->ht_zmqsock;
+		zmqpoll.events |= ZMQ_POLLIN;
+		zmq_poll(&zmqpoll, 1, 1000);
+
+		memset(&msg, 0, sizeof(msg));
+		res = zmq_recv(thread->ht_zmqsock, &msg,
+		    sizeof(msg), ZMQ_DONTWAIT);
+		if (res != sizeof(msg)) {
+			fprintf(stderr, "[*] Worker thread failed to"
+			    " shutdown gracefully. Terminating.\n");
+			pthread_cancel(thread->ht_tid);
+		}
+		pthread_peekjoin_np(thread->ht_tid, NULL);
+		pthread_cancel(thread->ht_tid);
+	}
 }
