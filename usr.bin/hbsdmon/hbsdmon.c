@@ -201,6 +201,7 @@ hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
 	snprintf(sndbuf, sizeof(sndbuf)-1, "Heartbeat at %s\n",
 	    timebuf);
 	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_message_set_user(pmsg, ctx->hc_dest);
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
 
