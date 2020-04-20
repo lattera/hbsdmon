@@ -76,9 +76,12 @@ get_psh_ctx(hbsdmon_ctx_t *ctx)
 bool
 parse_config(hbsdmon_ctx_t *ctx)
 {
-	struct ucl_parser *parser;
 	const ucl_object_t *top, *obj;
+	struct ucl_parser *parser;
+	hbsdmon_keyvalue_t *kv;
 	const char *str;
+	int64_t ucl_int;
+	uint64_t interval;
 	bool res;
 
 	assert(ctx != NULL);
@@ -135,6 +138,23 @@ parse_config(hbsdmon_ctx_t *ctx)
 		goto end;
 	}
 
+	obj = ucl_lookup_path(top, ".interval");
+	if (obj != NULL) {
+		ucl_int = ucl_object_toint(obj);
+		interval = (uint64_t)ucl_int;
+		kv = hbsdmon_new_keyvalue();
+		if (kv == NULL) {
+			res = false;
+			goto end;
+		}
+		res = hbsdmon_keyvalue_store(kv, "interval",
+		    &interval, sizeof(interval));
+		if (res == false) {
+			goto end;
+		}
+		hbsdmon_append_kv(ctx->hc_kvstore, kv);
+	}
+
 	res = parse_nodes(ctx, top);
 
 end:
@@ -156,6 +176,7 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 	uint64_t kv_uint;
 	const char *str;
 	int64_t ucl_int;
+	bool res;
 	int port;
 
 	ucl_nodes = ucl_lookup_path(top, ".nodes");
@@ -255,6 +276,22 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 			break;
 		default:
 			break;
+		}
+
+		ucl_tmp = ucl_lookup_path(top, ".interval");
+		if (ucl_tmp != NULL) {
+			ucl_int = ucl_object_toint(ucl_tmp);
+			kv_uint = (uint64_t)ucl_int;
+			kv = hbsdmon_new_keyvalue();
+			if (kv == NULL) {
+				return (false);
+			}
+			res = hbsdmon_keyvalue_store(kv, "interval",
+			    &kv_uint, sizeof(kv_uint));
+			if (res == false) {
+				return (false);
+			}
+			hbsdmon_append_kv(ctx->hc_kvstore, kv);
 		}
 
 		SLIST_INSERT_HEAD(&(ctx->hc_nodes), node, hn_entry);
