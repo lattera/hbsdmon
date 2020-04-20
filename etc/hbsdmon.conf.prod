@@ -1,0 +1,92 @@
+{
+	token: "sanitized",
+	dest: "sanitized",
+	interval: 60,
+	nodes: [
+		{
+			host: "ci-01.nyi.hardenedbsd.org",
+			method: "HTTP",
+		},
+		{
+			host: "ci-01.nyi.hardenedbsd.org",
+			method: "TCP",
+			port: 22,
+			messages: {
+				fail: "Service: SSH",
+			},
+		},
+		{
+			host: "git-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 443,
+		},
+		{
+			host: "git-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+			messages: {
+				fail: "Service: SSH",
+			},
+		},
+		{
+			host: "hardenedbsd.org",
+			method: "HTTP",
+		},
+		{
+			host: "ci-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "ci-02.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "ci-03.md.hardenedbsd.lan",
+			method: "HTTP",
+		},
+		{
+			host: "ci-04.md.hardenedbsd.lan",
+			method: "HTTP",
+		},
+		{
+			host: "ci-05.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "ci-06.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "ad-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "ns-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "ns-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 53,
+			messages: {
+				fail: "Service: DNS",
+			}
+		},
+		{
+			host: "tor-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+		{
+			host: "tor-services-01.md.hardenedbsd.lan",
+			method: "TCP",
+			port: 22,
+		},
+	]
+}
