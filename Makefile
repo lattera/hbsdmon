@@ -1,4 +1,5 @@
 SUBDIR+=	\
+		etc \
 		lib \
 		usr.bin
 
