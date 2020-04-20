@@ -217,6 +217,14 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 	ucl_it = ucl_it_obj = NULL;
 
 	while ((ucl_node = ucl_iterate_object(ucl_nodes, &ucl_it, true))) {
+		ucl_tmp = ucl_lookup_path(ucl_node, ".disabled");
+		if (ucl_tmp != NULL) {
+			res = ucl_object_toboolean(ucl_tmp);
+			if (res == true) {
+				continue;
+			}
+		}
+
 		node = hbsdmon_new_node();
 		if (node == NULL) {
 			perror("calloc");
