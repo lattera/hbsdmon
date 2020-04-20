@@ -78,6 +78,7 @@ typedef struct _hbsdmon_ctx {
 	void				*hc_zmq;
 	size_t				 hc_nthreads;
 	size_t				 hc_nnodes;
+	uint64_t			 hc_heartbeat;
 	pthread_mutex_t			 hc_mtx;
 	SLIST_HEAD(, _hbsdmon_node)	 hc_nodes;
 	SLIST_HEAD(, _hbsdmon_thread)	 hc_threads;
@@ -89,6 +90,8 @@ bool parse_config(hbsdmon_ctx_t *);
 hbsdmon_method_t hbsdmon_str_to_method(const char *);
 const char *hbsdmon_method_to_str(hbsdmon_method_t);
 long hbsdmon_get_interval(hbsdmon_node_t *);
+time_t hbsdmon_get_last_heartbeat(hbsdmon_ctx_t *);
+bool hbsdmon_update_last_heartbeat(hbsdmon_ctx_t *);
 
 hbsdmon_node_t *hbsdmon_new_node(void);
 hbsdmon_keyvalue_store_t *hbsdmon_node_kv(hbsdmon_node_t *);

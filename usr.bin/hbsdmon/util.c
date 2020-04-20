@@ -88,3 +88,27 @@ hbsdmon_get_interval(hbsdmon_node_t *node)
 	/* 5 seconds seems sane */
 	return (5);
 }
+
+time_t
+hbsdmon_get_last_heartbeat(hbsdmon_ctx_t *ctx)
+{
+	hbsdmon_keyvalue_t *kv;
+
+	kv = hbsdmon_find_kv(ctx->hc_kvstore, "heartbeat", true);
+	assert(kv != NULL);
+
+	return (hbsdmon_keyvalue_to_time(kv));
+}
+
+bool
+hbsdmon_update_last_heartbeat(hbsdmon_ctx_t *ctx)
+{
+	hbsdmon_keyvalue_t *kv;
+	time_t hbtime;
+
+	hbtime = time(NULL);
+	kv = hbsdmon_find_kv(ctx->hc_kvstore, "heartbeat", true);
+	assert(kv != NULL);
+	return (hbsdmon_keyvalue_modify(ctx->hc_kvstore, kv,
+	    &hbtime, sizeof(hbtime), true));
+}

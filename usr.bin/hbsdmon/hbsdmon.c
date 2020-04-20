@@ -49,6 +49,7 @@ static bool main_handle_message(hbsdmon_ctx_t *, hbsdmon_node_t *,
     hbsdmon_thread_msg_t *);
 static void dispatch_signal(hbsdmon_ctx_t *);
 static void dispatch_term(hbsdmon_ctx_t *);
+static void hbsdmon_heartbeat(hbsdmon_ctx_t *);
 
 int
 main(int argc, char *argv[])
@@ -116,6 +117,7 @@ main_loop(hbsdmon_ctx_t *ctx)
 
 	breakout = false;
 	while (true) {
+		hbsdmon_heartbeat(ctx);
 		/*
 		 * XXX I really dislike that ZeroMQ went with signed 
 		 * integers.
@@ -167,6 +169,42 @@ main_loop(hbsdmon_ctx_t *ctx)
 			}
 		}
 	}
+}
+
+static void
+hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
+{
+	char sndbuf[512], timebuf[32];
+	pushover_message_t *pmsg;
+	hbsdmon_keyvalue_t *kv;
+	time_t lasthb, curtime;
+	struct tm localt;
+
+	lasthb = hbsdmon_get_last_heartbeat(ctx);
+	curtime = time(NULL);
+	if (curtime - lasthb < ctx->hc_heartbeat - 1) {
+		return;
+	}
+
+	memset(timebuf, 0, sizeof(timebuf));
+	memset(&localt, 0, sizeof(localt));
+	localtime_r(&curtime, &localt);
+	asctime_r(&localt, timebuf);
+
+	memset(sndbuf, 0, sizeof(sndbuf));
+	pmsg = pushover_init_message(NULL);
+	if (pmsg == NULL) {
+		return;
+	}
+	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR HEARTBEAT");
+	pushover_message_set_title(pmsg, sndbuf);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "Heartbeat at %s\n",
+	    timebuf);
+	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
+	pushover_free_message(&pmsg);
+
+	assert(hbsdmon_update_last_heartbeat(ctx) == true);
 }
 
 static bool

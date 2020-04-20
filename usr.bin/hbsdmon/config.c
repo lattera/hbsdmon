@@ -79,9 +79,10 @@ parse_config(hbsdmon_ctx_t *ctx)
 	const ucl_object_t *top, *obj;
 	struct ucl_parser *parser;
 	hbsdmon_keyvalue_t *kv;
+	uint64_t interval;
+	time_t hbtime;
 	const char *str;
 	int64_t ucl_int;
-	uint64_t interval;
 	bool res;
 
 	assert(ctx != NULL);
@@ -154,6 +155,34 @@ parse_config(hbsdmon_ctx_t *ctx)
 		}
 		hbsdmon_append_kv(ctx->hc_kvstore, kv);
 	}
+
+	/* Default the heartbeat to six hours. */
+	ctx->hc_heartbeat = 60 * 60 * 6;
+	obj = ucl_lookup_path(top, ".heartbeat");
+	if (obj != NULL) {
+		ucl_int = ucl_object_toint(obj);
+		if (ucl_int <= 0) {
+			fprintf(stderr, "[-] heartbeat not an int.\n");
+			res = false;
+			goto end;
+		}
+		ctx->hc_heartbeat = (uint64_t)ucl_int;
+	}
+
+	hbtime = time(NULL);
+	kv = hbsdmon_new_keyvalue();
+	if (kv == NULL) {
+		fprintf(stderr, "[-] Could not create keyvalue for"
+		    " heartbeat object.\n");
+		res = false;
+		goto end;
+	}
+	res = hbsdmon_keyvalue_store(kv, "heartbeat",
+	    &hbtime, sizeof(hbtime));
+	if (res == false) {
+		goto end;
+	}
+	hbsdmon_append_kv(ctx->hc_kvstore, kv);
 
 	res = parse_nodes(ctx, top);
 
