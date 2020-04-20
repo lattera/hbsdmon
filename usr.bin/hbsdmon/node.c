@@ -119,7 +119,7 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			}
 		}
 
-		if (nevents != 0) {
+		if (nevents < 0) {
 			if (errno == ETERM) {
 				break;
 			}
