@@ -25,6 +25,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -118,27 +119,31 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			}
 		}
 
-		if (nevents == 0) {
-			res = hbsdmon_node_ping(thread->ht_ctx,
-			    thread->ht_node);
-			if (res == true) {
-				/*
-				 * Ping successful. Clear the last
-				 * fail time if it exists.
-				 */
-				kv = hbsdmon_find_kv_in_node(
-				    thread->ht_node, "lastfail", true);
-				if (kv != NULL) {
-					hbsdmon_node_success(thread);
-					hbsdmon_free_kv(hbsdmon_node_kv(
-					    thread->ht_node), &kv,
-					    true);
-				}
-				continue;
+		if (nevents != 0) {
+			if (errno == ETERM) {
+				break;
 			}
 
+			continue;
+		}
+
+		res = hbsdmon_node_ping(thread->ht_ctx,
+			thread->ht_node);
+		if (res == false) {
 			hbsdmon_node_fail(thread);
 			continue;
+		}
+
+		/*
+		* Ping successful. Clear the last
+		* fail time if it exists.
+		*/
+		kv = hbsdmon_find_kv_in_node( thread->ht_node,
+		    "lastfail", true);
+		if (kv != NULL) {
+			hbsdmon_node_success(thread);
+			hbsdmon_free_kv(hbsdmon_node_kv(
+			    thread->ht_node), &kv, true);
 		}
 	}
 
@@ -265,10 +270,6 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	pushover_message_set_msg(pmsg, msgstr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
-
-	memset(&tmsg, 0, sizeof(tmsg));
-	tmsg.htm_verb = VERB_HEARTBEAT;
-	zmq_send(thread->ht_zmqtsock, &tmsg, sizeof(tmsg), 0);
 
 	free(msgstr);
 }
