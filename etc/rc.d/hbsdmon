@@ -24,7 +24,7 @@
 # SUCH DAMAGE.
 #
 
-# PROVIDE: secadm
+# PROVIDE: hbsdmon
 # REQUIRE: NETWORK
 # KEYWORD: shutdown
 
