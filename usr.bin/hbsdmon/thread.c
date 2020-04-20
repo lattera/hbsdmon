@@ -156,8 +156,6 @@ hbsdmon_thread_start(void *argp)
 	case VERB_INIT:
 		hbsdmon_node_thread_init(thread);
 		break;
-	case VERB_TERM:
-	case VERB_FINI:
 	default:
 		goto end;
 	}
@@ -194,5 +192,20 @@ hbsdmon_thread_exit(hbsdmon_thread_t *thread)
 	msg.htm_thread = thread;
 	hbsdmon_thread_notify(thread, &msg);
 	zmq_close(thread->ht_zmqtsock);
+	thread->ht_zmqtsock = NULL;
 	pthread_exit(NULL);
+}
+
+static void
+hbsdmon_thread_cleanup(hbsdmon_thread_t *thread)
+{
+
+	if (thread == NULL) {
+		return;
+	}
+
+	zmq_close(thread->ht_zmqsock);
+	free(thread->ht_sockname);
+
+	hbsdmon_node_cleanup(thread->ht_node);
 }

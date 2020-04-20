@@ -94,12 +94,7 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 	int nevents, res;
 
 	while (true) {
-		timeout = 5000;
-		kv = hbsdmon_find_kv_in_node(thread->ht_node,
-		    "interval", false);
-		if (kv != NULL) {
-			timeout = (long)hbsdmon_keyvalue_to_uint64(kv);
-		}
+		timeout = hbsdmon_get_interval(thread->ht_node) * 1000;
 
 		memset(&pollitem, 0, sizeof(pollitem));
 		pollitem.socket = thread->ht_zmqtsock;
@@ -124,10 +119,6 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 		}
 
 		if (nevents == 0) {
-			/*
-			 * XXX properly calculate ping time based on
-			 * last ping.
-			 */
 			res = hbsdmon_node_ping(thread->ht_ctx,
 			    thread->ht_node);
 			if (res == true) {
@@ -196,10 +187,8 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 	case METHOD_HTTP:
 		return (hbsdmon_http_ping(node));
 	default:
-		break;
+		return (true);
 	}
-
-	return (true);
 }
 
 static void
@@ -212,13 +201,12 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	hbsdmon_keyvalue_t *kv;
 	long interval;
 
-	interval = 5;
-	kv = hbsdmon_find_kv_in_node(thread->ht_node,
-	    "interval", false);
-	if (kv != NULL) {
-		interval = (long)hbsdmon_keyvalue_to_uint64(kv);
-	}
-	interval--;
+	/*
+	 * This is used for determining the next ping. Value should be
+	 * one less than the primary interval to properly determine
+	 * next ping time.
+	 */
+	interval = hbsdmon_get_interval(thread->ht_node) - 1;
 
 	kv = hbsdmon_find_kv_in_node(thread->ht_node,
 	    "lastfail", true);
@@ -330,4 +318,10 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
+}
+
+void
+hbsdmon_node_cleanup(hbsdmon_node_t *node)
+{
+
 }

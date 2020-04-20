@@ -67,3 +67,24 @@ hbsdmon_method_to_str(hbsdmon_method_t method)
 		return (NULL);
 	}
 }
+
+long
+hbsdmon_get_interval(hbsdmon_node_t *node)
+{
+	hbsdmon_keyvalue_t *kv;
+
+	kv = hbsdmon_find_kv_in_node(node, "interval", false);
+	if (kv != NULL) {
+		return ((long)hbsdmon_keyvalue_to_uint64(kv));
+	}
+
+	/* XXX So much indirection! */
+	kv = hbsdmon_find_kv(node->hn_thread->ht_ctx->hc_kvstore,
+	    "interval", false);
+	if (kv != NULL) {
+		return ((long)hbsdmon_keyvalue_to_uint64(kv));
+	}
+
+	/* 5 seconds seems sane */
+	return (5);
+}

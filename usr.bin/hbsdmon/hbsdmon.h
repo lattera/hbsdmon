@@ -88,6 +88,7 @@ pushover_ctx_t *get_psh_ctx(hbsdmon_ctx_t *);
 bool parse_config(hbsdmon_ctx_t *);
 hbsdmon_method_t hbsdmon_str_to_method(const char *);
 const char *hbsdmon_method_to_str(hbsdmon_method_t);
+long hbsdmon_get_interval(hbsdmon_node_t *);
 
 hbsdmon_node_t *hbsdmon_new_node(void);
 hbsdmon_keyvalue_store_t *hbsdmon_node_kv(hbsdmon_node_t *);
@@ -124,5 +125,6 @@ bool hbsdmon_tcp_ping(hbsdmon_node_t *);
 bool hbsdmon_http_ping(hbsdmon_node_t *);
 
 bool hbsdmon_thread_init(hbsdmon_ctx_t *);
+void hbsdmon_node_cleanup(hbsdmon_node_t *);
 
 #endif /* !_HBSDMON_H */
