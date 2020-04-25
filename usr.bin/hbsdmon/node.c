@@ -39,6 +39,7 @@ static void hbsdmon_node_fail(hbsdmon_thread_t *);
 static void hbsdmon_node_success(hbsdmon_thread_t *);
 static void hbsdmon_node_notify(hbsdmon_node_t *,
     hbsdmon_thread_msg_t *);
+static char *hbsdmon_node_port(hbsdmon_node_t *);
 
 hbsdmon_node_t *
 hbsdmon_new_node(void)
@@ -120,6 +121,10 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 		}
 
 		if (nevents < 0) {
+			hbsdmon_thread_lock_ctx(thread);
+			thread->ht_ctx->hc_stats.hs_npollfails++;
+			hbsdmon_thread_unlock_ctx(thread);
+
 			if (errno == ETERM) {
 				break;
 			}
@@ -133,6 +138,10 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			hbsdmon_node_fail(thread);
 			continue;
 		}
+
+		hbsdmon_thread_lock_ctx(thread);
+		thread->ht_ctx->hc_stats.hs_nsuccess++;
+		hbsdmon_thread_unlock_ctx(thread);
 
 		/*
 		* Ping successful. Clear the last
@@ -199,7 +208,7 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 static void
 hbsdmon_node_fail(hbsdmon_thread_t *thread)
 {
-	char *failmsg, sndbuf[512], *msgstr;
+	char *failmsg, sndbuf[512], *msgstr, *nodestr;
 	time_t lastfail, tlastfail;
 	hbsdmon_thread_msg_t tmsg;
 	pushover_message_t *pmsg;
@@ -236,64 +245,83 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		return;
 	}
 
-	kv = hbsdmon_find_kv_in_node(thread->ht_node,
-	    "failmsg", true);
-
 	failmsg = "";
 	msgstr = NULL;
+
+	nodestr = hbsdmon_node_to_str(thread->ht_node);
+	if (nodestr == NULL) {
+		return;
+	}
+
+	kv = hbsdmon_find_kv_in_node(thread->ht_node,
+	    "failmsg", true);
 
 	if (kv != NULL) {
 		failmsg = hbsdmon_keyvalue_to_str(kv);
 	}
 
-	asprintf(&msgstr, "%s (method %s) stopped responding to pings.%s%s",
-	    thread->ht_node->hn_host,
-	    hbsdmon_method_to_str(thread->ht_node->hn_method),
-	    kv != NULL ? " Custom message: " : "",
-	    failmsg);
+	if (failmsg != NULL) {
+		asprintf(&msgstr, "%s\n%s", nodestr, failmsg);
+	} else {
+		asprintf(&msgstr, "%s", nodestr);
+	}
 
 	if (msgstr == NULL) {
 		fprintf(stderr, "[-] Unable to send fail message.\n");
+		free(nodestr);
 		return;
 	}
 
 	memset(sndbuf, 0, sizeof(sndbuf));
 	pmsg = pushover_init_message(NULL);
 	if (pmsg == NULL) {
+		free(nodestr);
+		free(msgstr);
 		return;
 	}
 
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
-	snprintf(sndbuf, sizeof(sndbuf)-1, "Node %s unresponsive",
-	    thread->ht_node->hn_host);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "NODE FAILURE");
 	pushover_message_set_title(pmsg, sndbuf);
 	pushover_message_set_msg(pmsg, msgstr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
 
+	hbsdmon_thread_lock_ctx(thread);
+	thread->ht_ctx->hc_stats.hs_nerrors++;
+	hbsdmon_thread_unlock_ctx(thread);
+
 	free(msgstr);
+	free(nodestr);
 }
 
 static void
 hbsdmon_node_success(hbsdmon_thread_t *thread)
 {
-	char sndbuf[512];
 	pushover_message_t *pmsg;
+	char sndbuf[512];
+	char *nodestr;
 
 	pmsg = pushover_init_message(NULL);
 	if (pmsg == NULL) {
 		return;
 	}
 
+	nodestr = hbsdmon_node_to_str(thread->ht_node);
+	if (nodestr == NULL) {
+		pushover_free_message(&pmsg);
+		return;
+	}
+
 	memset(sndbuf, 0, sizeof(sndbuf));
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
-	snprintf(sndbuf, sizeof(sndbuf)-1, "Node %s (method %s) back online",
-	    thread->ht_node->hn_host,
-	    hbsdmon_method_to_str(thread->ht_node->hn_method));
+	snprintf(sndbuf, sizeof(sndbuf)-1, "%s", nodestr);
 	pushover_message_set_title(pmsg, "NODE ONLINE");
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
+
 	pushover_free_message(&pmsg);
+	free(nodestr);
 }
 
 void
@@ -301,6 +329,7 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 {
 	pushover_message_t *pmsg;
 	char sndbuf[512];
+	char *nodestr;
 
 	memset(sndbuf, 0, sizeof(sndbuf));
 	pmsg = pushover_init_message(NULL);
@@ -308,21 +337,74 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 		return;
 	}
 
+	nodestr = hbsdmon_node_to_str(thread->ht_node);
+	if (nodestr == NULL) {
+		pushover_free_message(&pmsg);
+		return;
+	}
+
 	/* XXX check for errors */
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
 	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR INIT");
 	pushover_message_set_title(pmsg, sndbuf);
-	snprintf(sndbuf, sizeof(sndbuf)-1,
-	    "Initializing %s monitor for %s",
-	    hbsdmon_method_to_str(thread->ht_node->hn_method),
-	    thread->ht_node->hn_host);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "%s", nodestr);
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
+
 	pushover_free_message(&pmsg);
+	free(nodestr);
 }
 
 void
 hbsdmon_node_cleanup(hbsdmon_node_t *node)
 {
 
+	hbsdmon_free_kvstore(&(node->hn_kvstore));
+	free(node->hn_host);
+	node->hn_host = NULL;
+}
+
+char *
+hbsdmon_node_to_str(hbsdmon_node_t *node)
+{
+	char *port, *ret;
+
+	port = hbsdmon_node_port(node);
+	assert(port != NULL);
+
+	ret = NULL;
+	asprintf(&ret,
+	    "Host:	%s\n"
+	    "Method:	%s\n"
+	    "Port:	%s\n",
+	    node->hn_host,
+	    hbsdmon_method_to_str(node->hn_method),
+	    port);
+
+	free(port);
+
+	return (ret);
+}
+
+static char *
+hbsdmon_node_port(hbsdmon_node_t *node)
+{
+	hbsdmon_keyvalue_t *kv;
+	char *ret;
+	int port;
+
+	switch (node->hn_method) {
+	case METHOD_TCP:
+		ret = NULL;
+		kv = hbsdmon_find_kv(hbsdmon_node_kv(node),
+		    "port", true);
+		assert(kv != NULL);
+		port = hbsdmon_keyvalue_to_int(kv);
+		asprintf(&ret, "%d", port);
+		return (ret);
+	case METHOD_HTTP:
+		return (strdup("80"));
+	default:
+		return (strdup("N/A"));
+	}
 }

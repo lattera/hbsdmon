@@ -112,3 +112,52 @@ hbsdmon_update_last_heartbeat(hbsdmon_ctx_t *ctx)
 	return (hbsdmon_keyvalue_modify(ctx->hc_kvstore, kv,
 	    &hbtime, sizeof(hbtime), true));
 }
+
+void
+hbsdmon_lock_ctx(hbsdmon_ctx_t *ctx)
+{
+
+	pthread_mutex_lock(&(ctx->hc_mtx));
+}
+
+void
+hbsdmon_unlock_ctx(hbsdmon_ctx_t *ctx)
+{
+
+	pthread_mutex_unlock(&(ctx->hc_mtx));
+}
+
+void
+hbsdmon_thread_lock_ctx(hbsdmon_thread_t *thread)
+{
+
+	hbsdmon_lock_ctx(thread->ht_ctx);
+}
+
+void
+hbsdmon_thread_unlock_ctx(hbsdmon_thread_t *thread)
+{
+
+	hbsdmon_unlock_ctx(thread->ht_ctx);
+}
+
+void
+hbsdmon_node_lock_ctx(hbsdmon_node_t *node)
+{
+
+	hbsdmon_thread_lock_ctx(node->hn_thread);
+}
+
+void
+hbsdmon_node_unlock_ctx(hbsdmon_node_t *node)
+{
+
+	hbsdmon_thread_unlock_ctx(node->hn_thread);
+}
+
+void
+hbsdmon_reset_stats(hbsdmon_ctx_t *ctx)
+{
+
+	memset(&(ctx->hc_stats), 0, sizeof(ctx->hc_stats));
+}

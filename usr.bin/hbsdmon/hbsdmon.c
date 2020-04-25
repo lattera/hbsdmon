@@ -50,6 +50,7 @@ static bool main_handle_message(hbsdmon_ctx_t *, hbsdmon_node_t *,
 static void dispatch_signal(hbsdmon_ctx_t *);
 static void dispatch_term(hbsdmon_ctx_t *);
 static void hbsdmon_heartbeat(hbsdmon_ctx_t *);
+static char *hbsdmon_stats_to_str(hbsdmon_ctx_t *);
 
 int
 main(int argc, char *argv[])
@@ -135,14 +136,14 @@ main_loop(hbsdmon_ctx_t *ctx)
 		nitems = zmq_poll(pollitems, nitems, 1000);
 
 		if (appflags) {
-			pthread_mutex_lock(&(ctx->hc_mtx));
 			if ((appflags & APPFLAG_TERM)  ==
 			    APPFLAG_TERM) {
 				breakout = true;
 			}
 			dispatch_signal(ctx);
+			hbsdmon_lock_ctx(ctx);
 			appflags = 0;
-			pthread_mutex_unlock(&(ctx->hc_mtx));
+			hbsdmon_unlock_ctx(ctx);
 
 			if (breakout) {
 				break;
@@ -204,6 +205,10 @@ hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
 	pushover_message_set_user(pmsg, ctx->hc_dest);
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
+
+	hbsdmon_lock_ctx(ctx);
+	ctx->hc_stats.hs_nheartbeats++;
+	hbsdmon_unlock_ctx(ctx);
 
 	assert(hbsdmon_update_last_heartbeat(ctx) == true);
 }
@@ -292,4 +297,32 @@ dispatch_term(hbsdmon_ctx_t *ctx)
 		pthread_peekjoin_np(thread->ht_tid, NULL);
 		pthread_cancel(thread->ht_tid);
 	}
+}
+
+static void
+dispatch_info(hbsdmon_ctx_t *ctx)
+{
+
+	hbsdmon_lock_ctx(ctx);
+	hbsdmon_reset_stats(ctx);
+	hbsdmon_unlock_ctx(ctx);
+}
+
+static char *
+hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
+{
+	char *ret;
+
+	ret = NULL;
+	asprintf(&ret,
+	    "Heartbeats:	%zu\n"
+	    "Errors:		%zu\n"
+	    "Successes:		%zu\n"
+	    "Poll failures:	%zu\n",
+	    ctx->hc_stats.hs_nheartbeats,
+	    ctx->hc_stats.hs_nerrors,
+	    ctx->hc_stats.hs_nsuccess,
+	    ctx->hc_stats.hs_npollfails);
+
+	return (NULL);
 }

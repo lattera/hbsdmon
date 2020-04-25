@@ -70,6 +70,13 @@ typedef struct _hbsdmon_thread_msg {
 	};
 } hbsdmon_thread_msg_t;
 
+typedef struct _hbsdmon_stat {
+	size_t				 hs_nheartbeats;
+	size_t				 hs_nerrors;
+	size_t				 hs_nsuccess;
+	size_t				 hs_npollfails;
+} hbsdmon_stat_t;
+
 typedef struct _hbsdmon_ctx {
 	char				*hc_config;
 	char				*hc_dest;
@@ -79,6 +86,7 @@ typedef struct _hbsdmon_ctx {
 	size_t				 hc_nthreads;
 	size_t				 hc_nnodes;
 	uint64_t			 hc_heartbeat;
+	hbsdmon_stat_t			 hc_stats;
 	pthread_mutex_t			 hc_mtx;
 	SLIST_HEAD(, _hbsdmon_node)	 hc_nodes;
 	SLIST_HEAD(, _hbsdmon_thread)	 hc_threads;
@@ -92,6 +100,13 @@ const char *hbsdmon_method_to_str(hbsdmon_method_t);
 long hbsdmon_get_interval(hbsdmon_node_t *);
 time_t hbsdmon_get_last_heartbeat(hbsdmon_ctx_t *);
 bool hbsdmon_update_last_heartbeat(hbsdmon_ctx_t *);
+void hbsdmon_lock_ctx(hbsdmon_ctx_t *);
+void hbsdmon_unlock_ctx(hbsdmon_ctx_t *);
+void hbsdmon_thread_lock_ctx(hbsdmon_thread_t *);
+void hbsdmon_thread_unlock_ctx(hbsdmon_thread_t *);
+void hbsdmon_node_lock_ctx(hbsdmon_node_t *);
+void hbsdmon_node_unlock_ctx(hbsdmon_node_t *);
+void hbsdmon_reset_stats(hbsdmon_ctx_t *);
 
 hbsdmon_node_t *hbsdmon_new_node(void);
 hbsdmon_keyvalue_store_t *hbsdmon_node_kv(hbsdmon_node_t *);
@@ -102,6 +117,7 @@ hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
 void hbsdmon_node_thread_init(hbsdmon_thread_t *);
 bool hbsdmon_node_thread_run(hbsdmon_thread_t *);
 hbsdmon_node_t *hbsdmon_find_node_by_zmqsock(hbsdmon_ctx_t *, void *);
+char *hbsdmon_node_to_str(hbsdmon_node_t *);
 
 hbsdmon_keyvalue_t *hbsdmon_new_keyvalue(void);
 bool hbsdmon_keyvalue_store(hbsdmon_keyvalue_t *, const char *,
