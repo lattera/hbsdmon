@@ -208,7 +208,7 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 static void
 hbsdmon_node_fail(hbsdmon_thread_t *thread)
 {
-	char *failmsg, sndbuf[512], *msgstr, *nodestr;
+	char *failmsg, *msgstr, *nodestr;
 	time_t lastfail, tlastfail;
 	hbsdmon_thread_msg_t tmsg;
 	pushover_message_t *pmsg;
@@ -272,7 +272,6 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		return;
 	}
 
-	memset(sndbuf, 0, sizeof(sndbuf));
 	pmsg = pushover_init_message(NULL);
 	if (pmsg == NULL) {
 		free(nodestr);
@@ -281,8 +280,7 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	}
 
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
-	snprintf(sndbuf, sizeof(sndbuf)-1, "NODE FAILURE");
-	pushover_message_set_title(pmsg, sndbuf);
+	pushover_message_set_title(pmsg, "NODE FAILURE");
 	pushover_message_set_msg(pmsg, msgstr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
@@ -299,7 +297,6 @@ static void
 hbsdmon_node_success(hbsdmon_thread_t *thread)
 {
 	pushover_message_t *pmsg;
-	char sndbuf[512];
 	char *nodestr;
 
 	pmsg = pushover_init_message(NULL);
@@ -313,11 +310,9 @@ hbsdmon_node_success(hbsdmon_thread_t *thread)
 		return;
 	}
 
-	memset(sndbuf, 0, sizeof(sndbuf));
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
-	snprintf(sndbuf, sizeof(sndbuf)-1, "%s", nodestr);
 	pushover_message_set_title(pmsg, "NODE ONLINE");
-	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_message_set_msg(pmsg, nodestr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
 
 	pushover_free_message(&pmsg);
@@ -328,10 +323,8 @@ void
 hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 {
 	pushover_message_t *pmsg;
-	char sndbuf[512];
 	char *nodestr;
 
-	memset(sndbuf, 0, sizeof(sndbuf));
 	pmsg = pushover_init_message(NULL);
 	if (pmsg == NULL) {
 		return;
@@ -345,10 +338,8 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 
 	/* XXX check for errors */
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
-	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR INIT");
-	pushover_message_set_title(pmsg, sndbuf);
-	snprintf(sndbuf, sizeof(sndbuf)-1, "%s", nodestr);
-	pushover_message_set_msg(pmsg, sndbuf);
+	pushover_message_set_title(pmsg, "MONITOR INIT");
+	pushover_message_set_msg(pmsg, nodestr);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
 
 	pushover_free_message(&pmsg);
