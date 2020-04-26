@@ -19,6 +19,7 @@ typedef enum _hbsdmon_method {
 	METHOD_SSH,
 	METHOD_TCP,
 	METHOD_TOR,
+	METHOD_UDP,
 } hbsdmon_method_t;
 
 typedef enum _hbsdmon_thread_msg_verb {
@@ -142,6 +143,8 @@ int hbsdmon_unlock_kvstore(hbsdmon_keyvalue_store_t *);
 
 bool hbsdmon_tcp_ping(hbsdmon_node_t *);
 bool hbsdmon_http_ping(hbsdmon_node_t *);
+
+bool hbsdmon_udp_ping(hbsdmon_node_t *);
 
 bool hbsdmon_thread_init(hbsdmon_ctx_t *);
 void hbsdmon_node_cleanup(hbsdmon_node_t *);

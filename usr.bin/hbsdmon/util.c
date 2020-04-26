@@ -45,6 +45,8 @@ hbsdmon_str_to_method(const char *method)
 		return (METHOD_HTTP);
 	if (!strcasecmp(method, "TCP"))
 		return (METHOD_TCP);
+	if (!strcasecmp(method, "UDP"))
+		return (METHOD_UDP);
 
 	/* Default to ICMP */
 	return METHOD_ICMP;
@@ -63,6 +65,8 @@ hbsdmon_method_to_str(hbsdmon_method_t method)
 		return ("ICMP");
 	case METHOD_TCP:
 		return ("TCP");
+	case METHOD_UDP:
+		return ("UDP");
 	default:
 		return (NULL);
 	}

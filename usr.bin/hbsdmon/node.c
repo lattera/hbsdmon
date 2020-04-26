@@ -199,10 +199,12 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 {
 
 	switch (node->hn_method) {
-	case METHOD_TCP:
-		return (hbsdmon_tcp_ping(node));
 	case METHOD_HTTP:
 		return (hbsdmon_http_ping(node));
+	case METHOD_TCP:
+		return (hbsdmon_tcp_ping(node));
+	case METHOD_UDP:
+		return (hbsdmon_udp_ping(node));
 	default:
 		return (true);
 	}
@@ -389,6 +391,7 @@ hbsdmon_node_port(hbsdmon_node_t *node)
 	int port;
 
 	switch (node->hn_method) {
+	case METHOD_UDP:
 	case METHOD_TCP:
 		ret = NULL;
 		kv = hbsdmon_find_kv(hbsdmon_node_kv(node),

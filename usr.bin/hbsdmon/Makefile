@@ -5,6 +5,7 @@ SRCS+=	config.c
 SRCS+=	hbsdmon.c
 SRCS+=	keyvalue.c
 SRCS+=	net_tcp.c
+SRCS+=	net_udp.c
 SRCS+=	node.c
 SRCS+=	thread.c
 SRCS+=	util.c
