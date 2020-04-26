@@ -18,7 +18,7 @@ CFLAGS+=	-I${.CURDIR} \
 LDFLAGS+=	-L${.CURDIR}/../../lib/libpushover \
 		-L/usr/local/lib
 
-LDADD+=		-lcurl -lpthread -lpushover -lucl -lzmq
+LDADD+=		-lcurl -lpthread -lpushover -lsbuf -lucl -lzmq
 
 CFLAGS+=	-fPIE -flto -fvisibility=hidden -fsanitize=cfi -fsanitize=safe-stack
 LDFLAGS+=	-fPIE -pie -flto -fsanitize=cfi -fsanitize=safe-stack

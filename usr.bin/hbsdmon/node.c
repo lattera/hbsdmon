@@ -34,6 +34,9 @@
 
 #include "hbsdmon.h"
 
+#include <sys/types.h>
+#include <sys/sbuf.h>
+
 static bool hbsdmon_node_ping(hbsdmon_ctx_t *, hbsdmon_node_t *);
 static void hbsdmon_node_fail(hbsdmon_thread_t *);
 static void hbsdmon_node_success(hbsdmon_thread_t *);
@@ -208,11 +211,12 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 static void
 hbsdmon_node_fail(hbsdmon_thread_t *thread)
 {
-	char *failmsg, *msgstr, *nodestr;
 	time_t lastfail, tlastfail;
 	hbsdmon_thread_msg_t tmsg;
 	pushover_message_t *pmsg;
 	hbsdmon_keyvalue_t *kv;
+	struct sbuf *sb;
+	char *nodestr;
 	long interval;
 
 	/*
@@ -245,52 +249,52 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		return;
 	}
 
-	failmsg = "";
-	msgstr = NULL;
+	sb = sbuf_new_auto();
+	if (sb == NULL) {
+		return;
+	}
 
 	nodestr = hbsdmon_node_to_str(thread->ht_node);
 	if (nodestr == NULL) {
-		return;
+		goto end;
+	}
+
+	if (sbuf_cat(sb, nodestr)) {
+		goto end;
 	}
 
 	kv = hbsdmon_find_kv_in_node(thread->ht_node,
 	    "failmsg", true);
 
 	if (kv != NULL) {
-		failmsg = hbsdmon_keyvalue_to_str(kv);
-	}
-
-	if (failmsg != NULL) {
-		asprintf(&msgstr, "%s\n%s", nodestr, failmsg);
-	} else {
-		asprintf(&msgstr, "%s", nodestr);
-	}
-
-	if (msgstr == NULL) {
-		fprintf(stderr, "[-] Unable to send fail message.\n");
-		free(nodestr);
-		return;
+		sbuf_printf(sb, "\n%s", hbsdmon_keyvalue_to_str(kv));
 	}
 
 	pmsg = pushover_init_message(NULL);
 	if (pmsg == NULL) {
-		free(nodestr);
-		free(msgstr);
-		return;
+		goto end;
+	}
+
+	if (sbuf_finish(sb)) {
+		goto end;
 	}
 
 	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "NODE FAILURE");
-	pushover_message_set_msg(pmsg, msgstr);
+	pushover_message_set_msg(pmsg, sbuf_data(sb));
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
-	pushover_free_message(&pmsg);
+
+end:
 
 	hbsdmon_thread_lock_ctx(thread);
 	thread->ht_ctx->hc_stats.hs_nerrors++;
 	hbsdmon_thread_unlock_ctx(thread);
 
-	free(msgstr);
+	sbuf_delete(sb);
 	free(nodestr);
+	if (pmsg != NULL) {
+		pushover_free_message(&pmsg);
+	}
 }
 
 static void
