@@ -338,6 +338,9 @@ dispatch_info(hbsdmon_ctx_t *ctx)
 static char *
 hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
 {
+	struct tm localt;
+	char timebuf[32];
+	time_t heartbeat;
 	struct sbuf *sb;
 	char *ret;
 
@@ -346,11 +349,21 @@ hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
 		return (NULL);
 	}
 
+	memset(&localt, 0, sizeof(localt));
+	memset(timebuf, 0, sizeof(timebuf));
+	heartbeat = hbsdmon_get_last_heartbeat(ctx);
+	localtime_r(&heartbeat, &localt);
+	asctime_r(&localt, timebuf);
+
+	sbuf_printf(sb, "Last heartbeat: %s\n", timebuf);
+
+	sbuf_printf(sb, "Nodes: %zu\n", ctx->hc_nnodes);
+
 	sbuf_printf(sb,
-	    "Heartbeats:	%zu\n"
-	    "Errors:		%zu\n"
-	    "Successes:		%zu\n"
-	    "Poll failures:	%zu\n",
+	    "Heartbeats: %zu\n"
+	    "Errors: %zu\n"
+	    "Successes: %zu\n"
+	    "Poll failures: %zu\n",
 	    ctx->hc_stats.hs_nheartbeats,
 	    ctx->hc_stats.hs_nerrors,
 	    ctx->hc_stats.hs_nsuccess,
