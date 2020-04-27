@@ -33,6 +33,8 @@
 #include <pthread_np.h>
 
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/sbuf.h>
 
 #include "hbsdmon.h"
 
@@ -336,10 +338,15 @@ dispatch_info(hbsdmon_ctx_t *ctx)
 static char *
 hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
 {
+	struct sbuf *sb;
 	char *ret;
 
-	ret = NULL;
-	asprintf(&ret,
+	sb = sbuf_new_auto();
+	if (sb == NULL) {
+		return (NULL);
+	}
+
+	sbuf_printf(sb,
 	    "Heartbeats:	%zu\n"
 	    "Errors:		%zu\n"
 	    "Successes:		%zu\n"
@@ -348,6 +355,14 @@ hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
 	    ctx->hc_stats.hs_nerrors,
 	    ctx->hc_stats.hs_nsuccess,
 	    ctx->hc_stats.hs_npollfails);
+
+	if (sbuf_finish(sb)) {
+		sbuf_delete(sb);
+		return (NULL);
+	}
+
+	ret = strdup(sbuf_data(sb));
+	sbuf_delete(sb);
 
 	return (ret);
 }
