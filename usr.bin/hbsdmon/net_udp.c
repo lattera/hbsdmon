@@ -38,57 +38,9 @@
 
 #include "hbsdmon.h"
 
-static size_t hbsdmon_curl_write_data(void *, size_t,
-    size_t, void *);
-
 bool
 hbsdmon_udp_ping(hbsdmon_node_t *node)
 {
-	struct addrinfo hints, *servinfo, *servp;
-	hbsdmon_keyvalue_t *kv;
-	char buf[512];
-	int port, res, sockfd;
-	bool ret;
 
-	kv = hbsdmon_find_kv_in_node(node, "port", false);
-	if (kv == NULL) {
-		return (false);
-	}
-
-	port = hbsdmon_keyvalue_to_int(kv);
-	snprintf(buf, sizeof(buf)-1, "%d", port);
-
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
-
-	servinfo = NULL;
-	res = getaddrinfo(node->hn_host, buf, &hints, &servinfo);
-	if (res) {
-		return (false);
-	}
-
-	ret = false;
-	memset(buf, 0, sizeof(buf));
-	for (servp = servinfo; servp != NULL; servp = servp->ai_next) {
-		sockfd = socket(servp->ai_family, servp->ai_socktype,
-		    servp->ai_protocol);
-		if (sockfd == -1) {
-			continue;
-		}
-
-		if (sendto(sockfd, buf, 1, 0, servp->ai_addr,
-		    servp->ai_addrlen) <= 0) {
-			close(sockfd);
-			continue;
-		}
-
-		close(sockfd);
-		ret = true;
-		break;
-	}
-
-end:
-	freeaddrinfo(servinfo);
-	return (ret);
+	return (false);
 }
