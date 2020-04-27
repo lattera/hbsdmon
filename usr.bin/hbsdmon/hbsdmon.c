@@ -49,6 +49,7 @@ static bool main_handle_message(hbsdmon_ctx_t *, hbsdmon_node_t *,
     hbsdmon_thread_msg_t *);
 static void dispatch_signal(hbsdmon_ctx_t *);
 static void dispatch_term(hbsdmon_ctx_t *);
+static void dispatch_info(hbsdmon_ctx_t *);
 static void hbsdmon_heartbeat(hbsdmon_ctx_t *);
 static char *hbsdmon_stats_to_str(hbsdmon_ctx_t *);
 
@@ -260,6 +261,10 @@ dispatch_signal(hbsdmon_ctx_t *ctx)
 	if ((appflags & APPFLAG_TERM)  == APPFLAG_TERM) {
 		dispatch_term(ctx);
 	}
+
+	if ((appflags & APPFLAG_INFO) == APPFLAG_INFO) {
+		dispatch_info(ctx);
+	}
 }
 
 static void
@@ -302,10 +307,30 @@ dispatch_term(hbsdmon_ctx_t *ctx)
 static void
 dispatch_info(hbsdmon_ctx_t *ctx)
 {
+	pushover_message_t *pmsg;
+	char *stats_str;
+
 
 	hbsdmon_lock_ctx(ctx);
+	stats_str = hbsdmon_stats_to_str(ctx);
 	hbsdmon_reset_stats(ctx);
 	hbsdmon_unlock_ctx(ctx);
+
+	if (stats_str == NULL) {
+		return;
+	}
+
+	pmsg = pushover_init_message(NULL);
+	if (pmsg == NULL) {
+		free(stats_str);
+		return;
+	}
+	pushover_message_set_title(pmsg, "MONITOR STATS");
+	pushover_message_set_msg(pmsg, stats_str);
+	pushover_message_set_user(pmsg, ctx->hc_dest);
+	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
+	pushover_free_message(&pmsg);
+	free(stats_str);
 }
 
 static char *
@@ -324,5 +349,5 @@ hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
 	    ctx->hc_stats.hs_nsuccess,
 	    ctx->hc_stats.hs_npollfails);
 
-	return (NULL);
+	return (ret);
 }
