@@ -281,7 +281,7 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		goto end;
 	}
 
-	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
+	pushover_message_set_dest(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "NODE FAILURE");
 	pushover_message_set_msg(pmsg, sbuf_data(sb));
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
@@ -316,7 +316,7 @@ hbsdmon_node_success(hbsdmon_thread_t *thread)
 		return;
 	}
 
-	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
+	pushover_message_set_dest(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "NODE ONLINE");
 	pushover_message_set_msg(pmsg, nodestr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
@@ -343,7 +343,7 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 	}
 
 	/* XXX check for errors */
-	pushover_message_set_user(pmsg, thread->ht_ctx->hc_dest);
+	pushover_message_set_dest(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "MONITOR INIT");
 	pushover_message_set_msg(pmsg, nodestr);
 	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);

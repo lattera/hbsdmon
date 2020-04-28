@@ -200,12 +200,11 @@ hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
 	if (pmsg == NULL) {
 		return;
 	}
-	snprintf(sndbuf, sizeof(sndbuf)-1, "MONITOR HEARTBEAT");
-	pushover_message_set_title(pmsg, sndbuf);
+	pushover_message_set_title(pmsg, "MONITOR HEARTBEAT");
 	snprintf(sndbuf, sizeof(sndbuf)-1, "Heartbeat at %s\n",
 	    timebuf);
 	pushover_message_set_msg(pmsg, sndbuf);
-	pushover_message_set_user(pmsg, ctx->hc_dest);
+	pushover_message_set_dest(pmsg, ctx->hc_dest);
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
 
@@ -329,7 +328,7 @@ dispatch_info(hbsdmon_ctx_t *ctx)
 	}
 	pushover_message_set_title(pmsg, "MONITOR STATS");
 	pushover_message_set_msg(pmsg, stats_str);
-	pushover_message_set_user(pmsg, ctx->hc_dest);
+	pushover_message_set_dest(pmsg, ctx->hc_dest);
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
 	pushover_free_message(&pmsg);
 	free(stats_str);
