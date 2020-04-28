@@ -29,6 +29,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
+#include <sys/sbuf.h>
+
 #include "libpushover.h"
 
 static char *msg_to_str(pushover_ctx_t *, pushover_message_t *, CURL *);
@@ -254,53 +257,80 @@ end:
 static char *
 msg_to_str(pushover_ctx_t *ctx, pushover_message_t *msg, CURL *curl)
 {
-	char *res, *t_device, *t_msg, *t_title, *t_token, *t_dest;
+	char *p, *res;
+	struct sbuf *sb;
 
 	assert(ctx != NULL);
 	assert(msg != NULL);
 
-	res = NULL;
-
-	t_device = curl_easy_escape(curl,
-	    msg->psh_device ? msg->psh_device : "", 0);
-	t_msg = curl_easy_escape(curl,
-	    msg->psh_msg ? msg->psh_msg : "", 0);
-	t_title = curl_easy_escape(curl,
-	    msg->psh_title ? msg->psh_title : "", 0);
-	t_token = curl_easy_escape(curl,
-	    ctx->psh_token, 0);
-	t_dest = curl_easy_escape(curl,
-	    msg->psh_dest, 0);
-
-	if (t_device == NULL ||
-	    t_msg == NULL ||
-	    t_title == NULL ||
-	    t_token == NULL ||
-	    t_dest == NULL) {
+	sb = sbuf_new_auto();
+	if (sb == NULL) {
 		goto end;
 	}
 
-	asprintf(&res,
-	    "token=%s&"
-	    "user=%s&"
-	    "message=%s&"
-	    "title=%s&"
-	    "priority=%d&"
-	    "device=%s",
-	    t_token,
-	    t_dest,
-	    t_msg,
-	    t_title,
-	    msg->psh_priority,
-	    t_device);
+	res = NULL;
+	if (msg->psh_device != NULL) {
+		p = curl_easy_escape(curl, msg->psh_device, 0);
+		if (p == NULL) {
+			goto end;
+		}
+		if (sbuf_printf(sb, "&device=%s", p)) {
+			goto end;
+		}
+		free(p);
+	}
+	if (msg->psh_msg != NULL) {
+		p = curl_easy_escape(curl, msg->psh_msg, 0);
+		if (p == NULL) {
+			goto end;
+		}
+		if (sbuf_printf(sb, "&message=%s", p)) {
+			goto end;
+		}
+		free(p);
+	}
+	if (msg->psh_title != NULL) {
+		p = curl_easy_escape(curl, msg->psh_title, 0);
+		if (p == NULL) {
+			goto end;
+		}
+		if (sbuf_printf(sb, "&title=%s", p)) {
+			goto end;
+		}
+		free(p);
+	}
+	if (ctx->psh_token != NULL) {
+		p = curl_easy_escape(curl, ctx->psh_token, 0);
+		if (p == NULL) {
+			goto end;
+		}
+		if (sbuf_printf(sb, "&token=%s", p)) {
+			goto end;
+		}
+		free(p);
+	}
+	if (msg->psh_dest != NULL) {
+		p = curl_easy_escape(curl, msg->psh_dest, 0);
+		if (p == NULL) {
+			goto end;
+		}
+		if (sbuf_printf(sb, "&user=%s", p)) {
+			goto end;
+		}
+		free(p);
+	}
+
+	if (sbuf_printf(sb, "&priority=%d", msg->psh_priority)) {
+		goto end;
+	}
 
 end:
-	curl_free(t_device);
-	curl_free(t_msg);
-	curl_free(t_title);
-	curl_free(t_token);
-	curl_free(t_dest);
-
+	if (sb != NULL) {
+		if (sbuf_finish(sb)) {
+			return (NULL);
+		}
+		res = strdup(sbuf_data(sb));
+	}
 	return (res);
 }
 
