@@ -57,6 +57,8 @@ pushover_init_ctx(const char *token)
 	if (token != NULL)
 		res->psh_token = strdup(token);
 
+	res->psh_version = LIBPUSHOVER_VERSION;
+
 out:
 	return (res);
 }

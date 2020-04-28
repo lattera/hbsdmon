@@ -5,6 +5,8 @@
 
 #include <curl/curl.h>
 
+#define	LIBPUSHOVER_VERSION	 20200428001UL
+
 #define EXPORTED_SYM	 __attribute__((visibility("default")))
 #define PUSHOVER_URI	 "https://api.pushover.net/1/messages.json"
 
@@ -20,6 +22,7 @@ typedef enum _pushover_priority {
 } pushover_priority_t;
 
 typedef struct _pushover_ctx {
+	uint64_t	 psh_version;
 	char		*psh_token;
 	char		*psh_uri;
 } pushover_ctx_t;
