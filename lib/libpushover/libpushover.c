@@ -133,7 +133,7 @@ pushover_free_message(pushover_message_t **msg)
 
 	msgp = *msg;
 
-	free(msgp->psh_user);
+	free(msgp->psh_dest);
 	free(msgp->psh_msg);
 	free(msgp->psh_title);
 	free(msgp->psh_device);
@@ -158,14 +158,14 @@ pushover_message_set_msg(pushover_message_t *msg, char *data)
 
 EXPORTED_SYM
 bool
-pushover_message_set_user(pushover_message_t *msg, char *user)
+pushover_message_set_dest(pushover_message_t *msg, char *dest)
 {
 
 	assert(msg != NULL);
-	assert(user != NULL);
+	assert(dest != NULL);
 
-	msg->psh_user = strdup(user);
-	return (msg->psh_user != NULL);
+	msg->psh_dest = strdup(dest);
+	return (msg->psh_dest != NULL);
 }
 
 EXPORTED_SYM
@@ -220,7 +220,7 @@ pushover_submit_message(pushover_ctx_t *ctx, pushover_message_t *msg)
 	assert(ctx != NULL);
 	assert(msg != NULL);
 	assert(ctx->psh_token != NULL);
-	assert(msg->psh_user != NULL);
+	assert(msg->psh_dest != NULL);
 	assert(msg->psh_msg != NULL);
 	assert(pushover_message_priority_sane(msg->psh_priority));
 
@@ -254,7 +254,7 @@ end:
 static char *
 msg_to_str(pushover_ctx_t *ctx, pushover_message_t *msg, CURL *curl)
 {
-	char *res, *t_device, *t_msg, *t_title, *t_token, *t_user;
+	char *res, *t_device, *t_msg, *t_title, *t_token, *t_dest;
 
 	assert(ctx != NULL);
 	assert(msg != NULL);
@@ -269,14 +269,14 @@ msg_to_str(pushover_ctx_t *ctx, pushover_message_t *msg, CURL *curl)
 	    msg->psh_title ? msg->psh_title : "", 0);
 	t_token = curl_easy_escape(curl,
 	    ctx->psh_token, 0);
-	t_user = curl_easy_escape(curl,
-	    msg->psh_user, 0);
+	t_dest = curl_easy_escape(curl,
+	    msg->psh_dest, 0);
 
 	if (t_device == NULL ||
 	    t_msg == NULL ||
 	    t_title == NULL ||
 	    t_token == NULL ||
-	    t_user == NULL) {
+	    t_dest == NULL) {
 		goto end;
 	}
 
@@ -288,7 +288,7 @@ msg_to_str(pushover_ctx_t *ctx, pushover_message_t *msg, CURL *curl)
 	    "priority=%d&"
 	    "device=%s",
 	    t_token,
-	    t_user,
+	    t_dest,
 	    t_msg,
 	    t_title,
 	    msg->psh_priority,
@@ -299,7 +299,7 @@ end:
 	curl_free(t_msg);
 	curl_free(t_title);
 	curl_free(t_token);
-	curl_free(t_user);
+	curl_free(t_dest);
 
 	return (res);
 }
