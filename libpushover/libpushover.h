@@ -25,7 +25,7 @@ typedef struct _pushover_ctx {
 } pushover_ctx_t;
 
 typedef struct _pushover_message {
-	char			*psh_user;
+	char			*psh_dest;
 	char			*psh_msg;
 	char			*psh_title;
 	char			*psh_device;
@@ -40,7 +40,7 @@ bool pushover_set_token(pushover_ctx_t *, const char *);
 pushover_message_t *pushover_init_message(pushover_message_t *);
 void pushover_free_message(pushover_message_t **);
 bool pushover_message_set_msg(pushover_message_t *, char *);
-bool pushover_message_set_user(pushover_message_t *, char *);
+bool pushover_message_set_dest(pushover_message_t *, char *);
 bool pushover_message_set_title(pushover_message_t *, char *);
 bool pushover_message_set_device(pushover_message_t *, char *);
 bool pushover_message_set_priority(pushover_message_t *,
