@@ -311,7 +311,6 @@ dispatch_info(hbsdmon_ctx_t *ctx)
 	pushover_message_t *pmsg;
 	char *stats_str;
 
-
 	hbsdmon_lock_ctx(ctx);
 	stats_str = hbsdmon_stats_to_str(ctx);
 	hbsdmon_reset_stats(ctx);

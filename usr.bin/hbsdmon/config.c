@@ -46,7 +46,6 @@ new_ctx(void)
 
 	ctx->hc_kvstore = hbsdmon_new_kv_store();
 	if (ctx->hc_kvstore == NULL) {
-		pushover_free_ctx(&(ctx->hc_psh_ctx));
 		free(ctx);
 		return (NULL);
 	}
@@ -54,7 +53,6 @@ new_ctx(void)
 	ctx->hc_zmq = zmq_ctx_new();
 	if (ctx->hc_zmq == NULL) {
 		hbsdmon_free_kvstore(&ctx->hc_kvstore);
-		pushover_free_ctx(&(ctx->hc_psh_ctx));
 		free(ctx);
 		return (NULL);
 	}
