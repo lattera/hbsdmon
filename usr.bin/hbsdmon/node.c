@@ -234,6 +234,13 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 	lastfail = 0;
 	if (kv != NULL) {
 		lastfail = hbsdmon_keyvalue_to_time(kv);
+		/* XXX make this dynamic */
+		lastfail = time(NULL) - lastfail;
+		if (lastfail > interval && lastfail < 7200) {
+			return;
+		}
+		hbsdmon_free_kv(hbsdmon_node_kv(thread->ht_node),
+		    &kv, true);
 	} else {
 		lastfail = time(NULL);
 		kv = hbsdmon_new_keyvalue();
@@ -243,12 +250,6 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		hbsdmon_keyvalue_store(kv, "lastfail",
 		    &lastfail, sizeof(lastfail));
 		hbsdmon_node_append_kv(thread->ht_node, kv);
-	}
-
-	/* XXX make this dynamic */
-	lastfail = time(NULL) - lastfail;
-	if (lastfail > interval && lastfail < 7200) {
-		return;
 	}
 
 	sb = sbuf_new_auto();
