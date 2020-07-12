@@ -241,16 +241,16 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		}
 		hbsdmon_free_kv(hbsdmon_node_kv(thread->ht_node),
 		    &kv, true);
-	} else {
-		lastfail = time(NULL);
-		kv = hbsdmon_new_keyvalue();
-		if (kv == NULL) {
-			return;
-		}
-		hbsdmon_keyvalue_store(kv, "lastfail",
-		    &lastfail, sizeof(lastfail));
-		hbsdmon_node_append_kv(thread->ht_node, kv);
 	}
+
+	lastfail = time(NULL);
+	kv = hbsdmon_new_keyvalue();
+	if (kv == NULL) {
+		return;
+	}
+	hbsdmon_keyvalue_store(kv, "lastfail",
+		&lastfail, sizeof(lastfail));
+	hbsdmon_node_append_kv(thread->ht_node, kv);
 
 	sb = sbuf_new_auto();
 	if (sb == NULL) {
