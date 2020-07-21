@@ -327,7 +327,34 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 			if (res == false) {
 				return (false);
 			}
-			hbsdmon_append_kv(ctx->hc_kvstore, kv);
+			hbsdmon_node_append_kv(node, kv);
+		}
+
+		ucl_tmp = ucl_lookup_path(ucl_node, ".addrfam");
+		if (ucl_tmp != NULL) {
+			ucl_int = ucl_object_toint(ucl_tmp);
+			kv_uint = (uint64_t)ucl_int;
+			switch (kv_uint) {
+			case 4:
+				kv_uint = PF_INET;
+				break;
+			case 6:
+				kv_uint = PF_INET6;
+				break;
+			default:
+				return (false);
+			}
+
+			kv = hbsdmon_new_keyvalue();
+			if (kv == NULL) {
+				return (false);
+			}
+			res = hbsdmon_keyvalue_store(kv, "addrfam",
+			    &kv_uint, sizeof(kv_uint));
+			if (res == false) {
+				return (false);
+			}
+			hbsdmon_node_append_kv(node, kv);
 		}
 
 		SLIST_INSERT_HEAD(&(ctx->hc_nodes), node, hn_entry);

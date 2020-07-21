@@ -48,6 +48,7 @@ hbsdmon_tcp_ping(hbsdmon_node_t *node)
 	hbsdmon_keyvalue_t *kv;
 	char buf[512];
 	int port, res, sockfd;
+	int addrfam;
 	bool ret;
 
 	kv = hbsdmon_find_kv_in_node(node, "port", false);
@@ -58,8 +59,14 @@ hbsdmon_tcp_ping(hbsdmon_node_t *node)
 	port = hbsdmon_keyvalue_to_int(kv);
 	snprintf(buf, sizeof(buf)-1, "%d", port);
 
+	addrfam = AF_UNSPEC;
+	kv = hbsdmon_find_kv_in_node(node, "addrfam", false);
+	if (kv != NULL) {
+		addrfam = (int)hbsdmon_keyvalue_to_uint64(kv);
+	}
+
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;
+	hints.ai_family = addrfam;
 	hints.ai_socktype = SOCK_STREAM;
 
 	servinfo = NULL;

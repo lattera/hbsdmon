@@ -365,21 +365,58 @@ hbsdmon_node_cleanup(hbsdmon_node_t *node)
 char *
 hbsdmon_node_to_str(hbsdmon_node_t *node)
 {
+	hbsdmon_keyvalue_t *kv;
 	char *port, *ret;
+	struct sbuf *sb;
+	int addrfam;
+
+	sb = sbuf_new_auto();
+	if (sb == NULL) {
+		return (NULL);
+	}
 
 	port = hbsdmon_node_port(node);
 	assert(port != NULL);
 
-	ret = NULL;
-	asprintf(&ret,
+	if (sbuf_printf(sb,
 	    "Host:	%s\n"
 	    "Method:	%s\n"
 	    "Port:	%s\n",
 	    node->hn_host,
 	    hbsdmon_method_to_str(node->hn_method),
-	    port);
+	    port)) {
+		free(port);
+		return (NULL);
+	}
 
 	free(port);
+
+	switch (node->hn_method) {
+	case METHOD_TCP:
+	case METHOD_UDP:
+		kv = hbsdmon_find_kv(hbsdmon_node_kv(node),
+		    "addrfam", false);
+		if (kv == NULL) {
+			break;
+		}
+		addrfam = (int)hbsdmon_keyvalue_to_uint64(kv);
+		if (sbuf_printf(sb, "Address family: %s\n",
+		    (addrfam == PF_INET) ? "IPv4" : "IPv6")) {
+			sbuf_delete(sb);
+			return (NULL);
+		}
+	default:
+		break;
+	}
+
+	if (sbuf_finish(sb)) {
+		sbuf_delete(sb);
+		return (NULL);
+	}
+
+	ret = strdup(sbuf_data(sb));
+
+	sbuf_delete(sb);
 
 	return (ret);
 }
