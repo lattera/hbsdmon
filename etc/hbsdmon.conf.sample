@@ -18,6 +18,11 @@
 			host: "git-01.md.hardenedbsd.org",
 			method: "TCP",
 			port: 443,
-		}
+		},
+		{
+			host: "localhost",
+			method: "ZFS",
+			pool: "rpool",
+		},
 	]
 }

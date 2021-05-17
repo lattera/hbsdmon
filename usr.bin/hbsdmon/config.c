@@ -310,6 +310,29 @@ parse_nodes(hbsdmon_ctx_t *ctx, const ucl_object_t *top)
 
 			hbsdmon_node_append_kv(node, kv);
 			break;
+		case METHOD_ZFS:
+			ucl_tmp = ucl_lookup_path(ucl_node, ".pool");
+			if (ucl_tmp == NULL) {
+				fprintf(stderr, "[-] Pool not defined.\n");
+				return (false);
+			}
+
+			str = ucl_object_tostring(ucl_tmp);
+			if (str == NULL) {
+				return (false);
+			}
+
+			kv = hbsdmon_new_keyvalue();
+			if (kv == NULL) {
+				fprintf(stderr, "[-] Could not create new keyvalue object.\n");
+
+			}
+
+			if (!hbsdmon_keyvalue_store(kv, "pool",
+			    (void *)str, strlen(str)+1)) {
+				return (false);
+			}
+			hbsdmon_node_append_kv(node, kv);
 		default:
 			break;
 		}

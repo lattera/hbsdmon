@@ -154,7 +154,9 @@ hbsdmon_thread_start(void *argp)
 
 	switch (msg.htm_verb) {
 	case VERB_INIT:
-		hbsdmon_node_thread_init(thread);
+		if (!hbsdmon_node_thread_init(thread)) {
+			goto end;
+		}
 		break;
 	default:
 		goto end;

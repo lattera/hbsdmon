@@ -63,6 +63,22 @@ hbsdmon_new_node(void)
 	return (res);
 }
 
+bool
+hbsdmon_node_init(hbsdmon_node_t *node)
+{
+
+	switch (node->hn_method) {
+	case METHOD_ZFS:
+		if (!hbsdmon_zfs_init(node)) {
+			return (false);
+		}
+	default:
+		break;
+	}
+
+	return (true);
+}
+
 hbsdmon_keyvalue_store_t *
 hbsdmon_node_kv(hbsdmon_node_t *node)
 {
@@ -205,6 +221,8 @@ hbsdmon_node_ping(hbsdmon_ctx_t *ctx, hbsdmon_node_t *node)
 		return (hbsdmon_tcp_ping(node));
 	case METHOD_UDP:
 		return (hbsdmon_udp_ping(node));
+	case METHOD_ZFS:
+		return (hbsdmon_zfs_status(node));
 	default:
 		return (true);
 	}
@@ -326,21 +344,25 @@ hbsdmon_node_success(hbsdmon_thread_t *thread)
 	free(nodestr);
 }
 
-void
+bool
 hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 {
 	pushover_message_t *pmsg;
 	char *nodestr;
 
+	if (!hbsdmon_node_init(thread->ht_node)) {
+		return (false);
+	}
+
 	pmsg = pushover_init_message(NULL);
 	if (pmsg == NULL) {
-		return;
+		return (false);
 	}
 
 	nodestr = hbsdmon_node_to_str(thread->ht_node);
 	if (nodestr == NULL) {
 		pushover_free_message(&pmsg);
-		return;
+		return (false);
 	}
 
 	/* XXX check for errors */
@@ -351,6 +373,8 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 
 	pushover_free_message(&pmsg);
 	free(nodestr);
+
+	return (true);
 }
 
 void
@@ -405,6 +429,19 @@ hbsdmon_node_to_str(hbsdmon_node_t *node)
 			sbuf_delete(sb);
 			return (NULL);
 		}
+		break;
+	case METHOD_ZFS:
+		kv = hbsdmon_find_kv(hbsdmon_node_kv(node),
+		    "pool", false);
+		if (kv == NULL) {
+			break;
+		}
+		if (sbuf_printf(sb, "Pool: %s\n",
+		    hbsdmon_keyvalue_to_str(kv))) {
+			sbuf_delete(sb);
+			return (NULL);
+		}
+		break;
 	default:
 		break;
 	}

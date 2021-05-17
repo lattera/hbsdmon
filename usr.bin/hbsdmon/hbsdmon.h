@@ -20,6 +20,7 @@ typedef enum _hbsdmon_method {
 	METHOD_TCP,
 	METHOD_TOR,
 	METHOD_UDP,
+	METHOD_ZFS,
 } hbsdmon_method_t;
 
 typedef enum _hbsdmon_thread_msg_verb {
@@ -110,12 +111,13 @@ void hbsdmon_node_unlock_ctx(hbsdmon_node_t *);
 void hbsdmon_reset_stats(hbsdmon_ctx_t *);
 
 hbsdmon_node_t *hbsdmon_new_node(void);
+bool hbsdmon_node_init(hbsdmon_node_t *);
 hbsdmon_keyvalue_store_t *hbsdmon_node_kv(hbsdmon_node_t *);
 void hbsdmon_node_append_kv(hbsdmon_node_t *, hbsdmon_keyvalue_t *);
 void hbsdmon_node_debug_print(hbsdmon_node_t *);
 hbsdmon_keyvalue_t *hbsdmon_find_kv_in_node(hbsdmon_node_t *,
     const char *, bool);
-void hbsdmon_node_thread_init(hbsdmon_thread_t *);
+bool hbsdmon_node_thread_init(hbsdmon_thread_t *);
 bool hbsdmon_node_thread_run(hbsdmon_thread_t *);
 hbsdmon_node_t *hbsdmon_find_node_by_zmqsock(hbsdmon_ctx_t *, void *);
 char *hbsdmon_node_to_str(hbsdmon_node_t *);
@@ -145,6 +147,9 @@ bool hbsdmon_tcp_ping(hbsdmon_node_t *);
 bool hbsdmon_http_ping(hbsdmon_node_t *);
 
 bool hbsdmon_udp_ping(hbsdmon_node_t *);
+
+bool hbsdmon_zfs_init(hbsdmon_node_t *);
+bool hbsdmon_zfs_status(hbsdmon_node_t *);
 
 bool hbsdmon_thread_init(hbsdmon_ctx_t *);
 void hbsdmon_node_cleanup(hbsdmon_node_t *);
