@@ -39,4 +39,8 @@ LDADD+=		-lcurl -lpthread -lpushover -lsbuf -lucl -lzmq -lzfs -lnvpair -lspl
 #CFLAGS+=	-fPIE -flto -fvisibility=hidden -fsanitize=cfi -fsanitize=safe-stack
 #LDFLAGS+=	-fPIE -pie -flto -fsanitize=cfi -fsanitize=safe-stack
 
+.if defined(PREFIX)
+BINDIR=	${PREFIX}/bin
+.endif
+
 .include <bsd.prog.mk>
