@@ -53,7 +53,7 @@ hbsdmon_start()
 {
 	/usr/sbin/daemon -p ${hbsdmon_pidfile} \
 	    -f \
-	    /usr/bin/hbsdmon -c ${hbsdmon_conf}
+	    /usr/local/bin/hbsdmon -c ${hbsdmon_conf}
 }
 
 hbsdmon_stop()
