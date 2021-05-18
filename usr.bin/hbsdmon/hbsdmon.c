@@ -36,6 +36,8 @@
 #include <sys/types.h>
 #include <sys/sbuf.h>
 
+#include <curl/curl.h>
+
 #include "hbsdmon.h"
 
 #define	APPFLAG_NONE	 0
@@ -80,6 +82,11 @@ main(int argc, char *argv[])
 	}
 
 	pthread_mutex_init(&(ctx->hc_mtx), NULL);
+
+	if (curl_global_init(CURL_GLOBAL_ALL)) {
+		fprintf(stderr, "[-] Unable to initialize CURL.\n");
+		return (1);
+	}
 
 	res = 0;
 
