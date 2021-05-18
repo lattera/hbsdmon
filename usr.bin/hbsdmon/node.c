@@ -403,9 +403,11 @@ hbsdmon_node_to_str(hbsdmon_node_t *node)
 	assert(port != NULL);
 
 	if (sbuf_printf(sb,
-	    "Host:	%s\n"
-	    "Method:	%s\n"
-	    "Port:	%s\n",
+	    "Monitor name:	%s\n"
+	    "Host:		%s\n"
+	    "Method:		%s\n"
+	    "Port:		%s\n",
+	    node->hn_thread->ht_ctx->hc_name,
 	    node->hn_host,
 	    hbsdmon_method_to_str(node->hn_method),
 	    port)) {

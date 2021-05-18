@@ -41,8 +41,9 @@ new_ctx(void)
 	hbsdmon_ctx_t *ctx;
 
 	ctx = calloc(1, sizeof(*ctx));
-	if (ctx == NULL)
+	if (ctx == NULL) {
 		return (NULL);
+	}
 
 	ctx->hc_kvstore = hbsdmon_new_kv_store();
 	if (ctx->hc_kvstore == NULL) {
@@ -103,6 +104,14 @@ parse_config(hbsdmon_ctx_t *ctx)
 	if (top == NULL) {
 		res = false;
 		goto end;
+	}
+
+	obj = ucl_lookup_path(top, ".name");
+	if (obj != NULL) {
+		str = ucl_object_tostring(obj);
+		if (str != NULL) {
+			ctx->hc_name = strdup(str);
+		}
 	}
 
 	obj = ucl_lookup_path(top, ".token");
@@ -181,6 +190,14 @@ parse_config(hbsdmon_ctx_t *ctx)
 		goto end;
 	}
 	hbsdmon_append_kv(ctx->hc_kvstore, kv);
+
+	if (ctx->hc_name == NULL) {
+		ctx->hc_name = strdup(HBSDMON_DEFAULT_NAME);
+		if (ctx->hc_name == NULL) {
+			res = false;
+			goto end;
+		}
+	}
 
 	res = parse_nodes(ctx, top);
 

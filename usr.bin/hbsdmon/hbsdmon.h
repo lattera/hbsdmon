@@ -9,6 +9,8 @@
 
 #include "libpushover.h"
 
+#define	HBSDMON_DEFAULT_NAME	"HardenedBSD Monitor"
+
 struct _hbsdmon_ctx;
 struct _hbsdmon_thread;
 
@@ -82,6 +84,7 @@ typedef struct _hbsdmon_stat {
 typedef struct _hbsdmon_ctx {
 	char				*hc_config;
 	char				*hc_dest;
+	char				*hc_name;
 	pushover_ctx_t			*hc_psh_ctx;
 	hbsdmon_keyvalue_store_t	*hc_kvstore;
 	void				*hc_zmq;
