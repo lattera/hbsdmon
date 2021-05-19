@@ -126,6 +126,8 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			if (zmq_recv(thread->ht_zmqtsock, &tmsg,
 			    sizeof(tmsg), 0) == -1) {
 				/* Unrecoverable error */
+				fprintf(stderr, "[-] zmq_poll: "
+				    "unrecoverable error.\n");
 				return (false);
 			}
 
@@ -135,6 +137,7 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 			case VERB_TERM:
 			case VERB_FINI:
 			default:
+				fprintf(stderr, "[*] Received TERM.\n");
 				return (true);
 			}
 		}
@@ -166,7 +169,7 @@ hbsdmon_node_thread_run(hbsdmon_thread_t *thread)
 		* Ping successful. Clear the last
 		* fail time if it exists.
 		*/
-		kv = hbsdmon_find_kv_in_node( thread->ht_node,
+		kv = hbsdmon_find_kv_in_node(thread->ht_node,
 		    "lastfail", true);
 		if (kv != NULL) {
 			hbsdmon_node_success(thread);
@@ -300,10 +303,14 @@ hbsdmon_node_fail(hbsdmon_thread_t *thread)
 		goto end;
 	}
 
+#ifndef NOSUBMIT
 	pushover_message_set_dest(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "NODE FAILURE");
 	pushover_message_set_msg(pmsg, sbuf_data(sb));
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
+#else
+	fprintf(stderr, "NODE FAILURE:\n%s\n", sbuf_data(sb));
+#endif
 
 end:
 
@@ -335,10 +342,14 @@ hbsdmon_node_success(hbsdmon_thread_t *thread)
 		return;
 	}
 
+#ifndef NOSUBMIT
 	pushover_message_set_dest(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "NODE ONLINE");
 	pushover_message_set_msg(pmsg, nodestr);
 	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
+#else
+	fprintf(stderr, "NODE ONLINE:\n%s\n", nodestr);
+#endif
 
 	pushover_free_message(&pmsg);
 	free(nodestr);
@@ -365,11 +376,15 @@ hbsdmon_node_thread_init(hbsdmon_thread_t *thread)
 		return (false);
 	}
 
+#ifndef NOSUBMIT
 	/* XXX check for errors */
 	pushover_message_set_dest(pmsg, thread->ht_ctx->hc_dest);
 	pushover_message_set_title(pmsg, "MONITOR INIT");
 	pushover_message_set_msg(pmsg, nodestr);
-	pushover_submit_message( thread->ht_ctx->hc_psh_ctx, pmsg);
+	pushover_submit_message(thread->ht_ctx->hc_psh_ctx, pmsg);
+#else
+	fprintf(stderr, "MONITOR INIT:\n%s\n", nodestr);
+#endif
 
 	pushover_free_message(&pmsg);
 	free(nodestr);

@@ -173,6 +173,12 @@ parse_config(hbsdmon_ctx_t *ctx)
 			res = false;
 			goto end;
 		}
+		if (ucl_int == 1) {
+			fprintf(stderr, "[-] heartbeat needs to be "
+			    "greater than 1.\n");
+			res = false;
+			goto end;
+		}
 		ctx->hc_heartbeat = (uint64_t)ucl_int;
 	}
 

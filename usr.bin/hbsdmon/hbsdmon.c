@@ -56,6 +56,7 @@ static void dispatch_term(hbsdmon_ctx_t *);
 static void dispatch_info(hbsdmon_ctx_t *);
 static void hbsdmon_heartbeat(hbsdmon_ctx_t *);
 static char *hbsdmon_stats_to_str(hbsdmon_ctx_t *);
+static bool hbsdmon_init_heartbeat(hbsdmon_ctx_t *);
 
 int
 main(int argc, char *argv[])
@@ -87,6 +88,8 @@ main(int argc, char *argv[])
 		fprintf(stderr, "[-] Unable to initialize CURL.\n");
 		return (1);
 	}
+
+	hbsdmon_init_heartbeat(ctx);
 
 	res = 0;
 
@@ -143,7 +146,7 @@ main_loop(hbsdmon_ctx_t *ctx)
 			nitems++;
 		}
 
-		nitems = zmq_poll(pollitems, nitems, 1000);
+		nitems = zmq_poll(pollitems, nitems, ctx->hc_heartbeat * 1000);
 
 		if (appflags) {
 			if ((appflags & APPFLAG_TERM)  ==
@@ -182,6 +185,25 @@ main_loop(hbsdmon_ctx_t *ctx)
 	}
 }
 
+static bool
+hbsdmon_init_heartbeat(hbsdmon_ctx_t *ctx)
+{
+	hbsdmon_keyvalue_t *kv;
+	time_t curtime;
+
+	curtime = time(NULL);
+	kv = hbsdmon_new_keyvalue();
+	assert(kv != NULL);
+
+	hbsdmon_keyvalue_store(kv, "heartbeat", &curtime,
+	    sizeof(curtime));
+	hbsdmon_append_kv(ctx->hc_kvstore, kv);
+
+	assert(hbsdmon_get_last_heartbeat(ctx));
+
+	return (true);
+}
+
 static void
 hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
 {
@@ -212,14 +234,16 @@ hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
 	    ctx->hc_name, timebuf);
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_message_set_dest(pmsg, ctx->hc_dest);
+#ifndef NOSUBMIT
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
+#endif
 	pushover_free_message(&pmsg);
 
 	hbsdmon_lock_ctx(ctx);
 	ctx->hc_stats.hs_nheartbeats++;
 	hbsdmon_unlock_ctx(ctx);
 
-	assert(hbsdmon_update_last_heartbeat(ctx) == true);
+	hbsdmon_update_last_heartbeat(ctx);
 }
 
 static bool
@@ -335,7 +359,11 @@ dispatch_info(hbsdmon_ctx_t *ctx)
 	pushover_message_set_title(pmsg, "MONITOR STATS");
 	pushover_message_set_msg(pmsg, stats_str);
 	pushover_message_set_dest(pmsg, ctx->hc_dest);
+#ifndef NOSUBMIT
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
+#else
+	fprintf(stderr, "MONITOR STATS:\n%s\n", stats_str);
+#endif
 	pushover_free_message(&pmsg);
 	free(stats_str);
 }
@@ -360,6 +388,7 @@ hbsdmon_stats_to_str(hbsdmon_ctx_t *ctx)
 	localtime_r(&heartbeat, &localt);
 	asctime_r(&localt, timebuf);
 
+	sbuf_printf(sb, "Monitor name: %s\n", ctx->hc_name);
 	sbuf_printf(sb, "Last heartbeat: %s\n", timebuf);
 
 	sbuf_printf(sb, "Nodes: %zu\n", ctx->hc_nnodes);

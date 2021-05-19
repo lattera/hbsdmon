@@ -9,6 +9,8 @@
 
 #include "libpushover.h"
 
+/*#define	NOSUBMIT*/
+
 #define	HBSDMON_DEFAULT_NAME	"HardenedBSD Monitor"
 
 struct _hbsdmon_ctx;
