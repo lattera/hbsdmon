@@ -208,8 +208,8 @@ hbsdmon_heartbeat(hbsdmon_ctx_t *ctx)
 		return;
 	}
 	pushover_message_set_title(pmsg, "MONITOR HEARTBEAT");
-	snprintf(sndbuf, sizeof(sndbuf)-1, "Heartbeat at %s\n",
-	    timebuf);
+	snprintf(sndbuf, sizeof(sndbuf)-1, "%s: Heartbeat at %s\n",
+	    ctx->hc_name, timebuf);
 	pushover_message_set_msg(pmsg, sndbuf);
 	pushover_message_set_dest(pmsg, ctx->hc_dest);
 	pushover_submit_message(ctx->hc_psh_ctx, pmsg);
