@@ -173,9 +173,12 @@ static void
 hbsdmon_thread_notify(hbsdmon_thread_t *thread,
     hbsdmon_thread_msg_t *msg)
 {
+	int res;
 
-	assert(zmq_send(thread->ht_zmqtsock, msg,
-	    sizeof(*msg), 0) == sizeof(*msg));
+	res = zmq_send(thread->ht_zmqtsock, msg,
+	    sizeof(*msg), 0);
+
+	assert(res == sizeof(*msg));
 }
 
 static void
